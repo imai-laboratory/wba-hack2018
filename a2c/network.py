@@ -50,12 +50,11 @@ def _make_network(convs,
         if lstm:
             out = rnn_out
 
-
-        mu = layers.fully_connected(out, num_actions, activation_fn=tf.nn.tanh,
+        mu = layers.fully_connected(out, num_actions,# activation_fn=tf.nn.tanh,
             weights_initializer=tf.orthogonal_initializer(0.1))
-        sigma = layers.fully_connected(out, num_actions, activation_fn=tf.nn.softplus,
+        logstd = layers.fully_connected(out, num_actions,# activation_fn=tf.nn.tanh,
             weights_initializer=tf.orthogonal_initializer(0.1))
-        dist = tf.distributions.Normal(mu, sigma)
+        dist = tf.distributions.Normal(mu, tf.exp(logstd))
         policy = tf.reshape(dist.sample(1), [-1, num_actions])
 
         value = layers.fully_connected(
