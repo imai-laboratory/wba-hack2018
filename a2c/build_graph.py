@@ -46,7 +46,7 @@ def build_train(model,
             value_loss = tf.reduce_mean(masked_value_loss)
         with tf.variable_scope('entropy'):
             masked_entroypy = tf.boolean_mask(dist.entropy(), mask_ph)
-            entropy = -tf.reduce_mean(masked_entroypy)
+            entropy = tf.reduce_mean(masked_entroypy)
         with tf.variable_scope('policy_loss'):
             masked_policy_loss = tf.boolean_mask(log_prob * advantages, mask_ph)
             policy_loss = tf.reduce_mean(masked_policy_loss)
