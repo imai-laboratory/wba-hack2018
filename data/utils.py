@@ -25,6 +25,7 @@ class DataGenerator():
     def generate_egocentric_images(self, episode=5, length=400, inplace=True):
         self.env.reset()
 
+        # egocentric_images.shape: (episode, length, height, width)
         egocentric_images = []
         for _ in range(episode):
             self.env.reset()
@@ -60,20 +61,34 @@ class DataGenerator():
         path = Path(dirname).joinpath(filename)
 
         if self.egocentric_images is not None:
-            print(path)
             np.save(path, self.egocentric_images)
 
-    # TODO: generate_allocentric_images
-    # TODO: save_allocentric_images
+    # TODO: 他の環境でも同様のmethodで動くか確認する
+    def generate_allocentric_images(self, scene=5, inplace=True):
+        self.env.reset()
 
-'''
-def animate(images, interval=5, blit=True, repeat_delay=1000):
-    fig = plt.figure()
-    ims = []
-    for sequence in images:
-        for image in sequence:
-            im = plt.imshow(image, animated=True)
-            ims.append([im])
-    ani = animation.ArtistAnimation(fig, ims, interval=interval, blit=blit, repeat_delay=repeat_delay)
-    plt.show()
-'''
+        # allocentric_images.shape: (scene, height, width)
+        allocentric_images = []
+        for _ in range(episode):
+            self.env.reset()
+            # 初期状態から遷移するのに必要な行動
+            action = np.array([0, -self.CAMERA_INITIAL_ANGLE_V])
+            obs, reward, done, _ = self.env.step(action)
+            images = obs['screen'].copy()
+            allocentric_images.append(images)
+        allocentric_images = np.array(allocentric_images)
+        
+        if inplace:
+            self.allocentric_images = allocentric_images
+        
+        return allocentric_images
+    
+    def save_allocentric_images(self, dirname='images', prefix='allocentric_images'):
+        dirname = str(Path(dirname).joinpath(self.content_name))
+        os.makedirs(dirname, exist_ok=True)
+        now = datetime.datetime.now()
+        filename = prefix + '{:%Y%m%d}'.format(now) + '.npy'
+        path = Path(dirname).joinpath(filename)
+
+        if self.allocentric_images is not None:
+            np.save(path, self.allocentric_images)
