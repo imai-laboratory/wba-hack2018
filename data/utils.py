@@ -62,6 +62,8 @@ class DataGenerator():
 
         if self.egocentric_images is not None:
             np.save(path, self.egocentric_images)
+        
+        return path
 
     # TODO: 他の環境でも同様のmethodで動くか確認する
     def generate_allocentric_images(self, scene=5, inplace=True):
@@ -69,7 +71,7 @@ class DataGenerator():
 
         # allocentric_images.shape: (scene, height, width)
         allocentric_images = []
-        for _ in range(episode):
+        for _ in range(scene):
             self.env.reset()
             # 初期状態から遷移するのに必要な行動
             action = np.array([0, -self.CAMERA_INITIAL_ANGLE_V])
@@ -92,3 +94,5 @@ class DataGenerator():
 
         if self.allocentric_images is not None:
             np.save(path, self.allocentric_images)
+        
+        return path
