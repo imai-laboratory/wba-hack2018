@@ -46,7 +46,7 @@ class DataGenerator():
                 image = obs['screen'].copy()
                 images.append(image)
             egocentric_images.append(images)
-        egocentric_images = np.array(egocentric_images)
+        egocentric_images = np.array(egocentric_images).reshape((-1, 128, 128, 3))
         
         if inplace:
             self.egocentric_images = egocentric_images

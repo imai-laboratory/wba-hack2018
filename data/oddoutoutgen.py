@@ -6,7 +6,7 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument('--episode', type=int, default=10)
 parser.add_argument('--length', type=int, default=100)
-parser.add_argument('--scene', type=int, default=100)
+parser.add_argument('--scene', type=int, default=1000)
 args = parser.parse_args()
 
 def main(args):
