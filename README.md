@@ -5,5 +5,9 @@
 cd data
 python oddoneoutgen.py --episode=<int> --length=<int> --scene=<int>
 ```
-egocentric_images.shape: (episode*length, height=128, width=128, channel=3)  
-allocentric_images.shape: (scene, height=128, width=128, channel=3)  
+- エゴセントリック画像
+    - shape: (episode*length, height=128, width=128, channel=3)
+    - save: data/images/OddOneOut/egocentric_images%Y%m%d.npy
+- アロセントリック画像
+    - shape: (scene, height=128, width=128, channel=3) 
+    - save: data/images/OddOneOut/allocentric_images%Y%m%d.npy
