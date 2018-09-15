@@ -4,6 +4,7 @@ from oculoenv import OddOneOutContent, Environment
 from oculoenv.utils import deg2rad
 import matplotlib.pyplot as plt
 from pathlib import Path
+from tqdm import tqdm
 import datetime
 import matplotlib.animation as animation
 
@@ -27,7 +28,7 @@ class DataGenerator():
 
         # egocentric_images.shape: (episode, length, height, width)
         egocentric_images = []
-        for _ in range(episode):
+        for _ in tqdm(range(episode)):
             self.env.reset()
             # 初期状態から遷移するのに必要な行動
             action = np.array([0, -self.CAMERA_INITIAL_ANGLE_V])
@@ -71,7 +72,7 @@ class DataGenerator():
 
         # allocentric_images.shape: (scene, height, width)
         allocentric_images = []
-        for _ in range(scene):
+        for _ in tqdm(range(scene)):
             self.env.reset()
             # 初期状態から遷移するのに必要な行動
             action = np.array([0, -self.CAMERA_INITIAL_ANGLE_V])
