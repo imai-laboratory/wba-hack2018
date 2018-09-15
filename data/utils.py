@@ -63,7 +63,6 @@ class DataGenerator():
 
         if self.egocentric_images is not None:
             np.save(path, self.egocentric_images)
-        
         return path
 
     # TODO: 他の環境でも同様のmethodで動くか確認する
@@ -97,3 +96,9 @@ class DataGenerator():
             np.save(path, self.allocentric_images)
         
         return path
+
+    def reset_egocentric_images(self):
+        self.egocentric_images = []
+
+    def reset_allocentric_images(self):
+        self.allocentric_images = []
