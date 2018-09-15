@@ -36,7 +36,7 @@ def main():
     saver.restore(sess, args.model)
 
     train_iterator = get_next()
-    batch_images = np.array([next(train_iterator)[0]])
+    batch_images = np.array([next(train_iterator)[0]], dtype=np.float32) / 255.0
 
     # reconstruction
     reconst, latent = reconstruct(batch_images)
@@ -62,6 +62,9 @@ def main():
         # show reconstructed images
         image_rows = tile_images(np.array(image_rows), row=latent_in_page)
         cv2.imshow('test{}'.format(page), image_rows)
+
+    cv2.imshow('reconstructed', reconst[0])
+    cv2.imshow('original', batch_images[0])
 
     while cv2.waitKey(10) < 10:
         time.sleep(0.1)
