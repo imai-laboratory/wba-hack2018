@@ -9,7 +9,7 @@ from util import tile_images, dump_constants
 from datetime import datetime
 from build_graph import build_graph
 from network import make_encoder, make_decoder, make_latent
-from tensorflow.examples.tutorials.mnist import input_data
+from read_dataset import read_dataset
 
 
 def build(constants):
@@ -44,10 +44,13 @@ def main():
     date = datetime.now().strftime('%Y%m%d%H%M%S')
     parser = argparse.ArgumentParser()
     parser.add_argument('--modeldir', type=str, default=date)
+    parser.add_argument('--data', type=str)
     args = parser.parse_args()
 
-    # get MNIST data
-    mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
+    # get image data
+    image_size = tuple(constants.IMAGE_SIZE[:-1])
+    get_next, get_test = read_dataset(args.data, image_size, int(1e5),
+                                      constants.BATCH_SIZE, constants.EPOCH)
 
     # make network
     reconstruct, generate, train = build(constants)
@@ -56,21 +59,24 @@ def main():
     sess.__enter__()
     sess.run(tf.global_variables_initializer())
 
-    # constant variables
-    batch_size = constants.BATCH_SIZE
-    image_size = constants.IMAGE_SIZE
+    train_iterator = get_next()
+    test_iterator = get_test()
 
     # start training
-    for i in range(30000):
-        batch_images, _ = mnist.train.next_batch(batch_size)
-        batch_images = np.reshape(batch_images, [batch_size] + image_size) 
-        loss = train(batch_images, beta=constants.BETA)
-        print('loss {}:'.format(i), loss)
+    count = 0
+    for batch_images in train_iterator:
+        batch_images = np.array(batch_images, dtype=np.float32) / 255.0
+        loss = train(batch_images, keep_prob=constants.KEEP_PROB,
+                     beta=constants.BETA)
+        print('loss {}:'.format(count), loss)
+        count += 1
 
         # visualize
-        if i % 100 == 0:
+        if count % 100 == 0:
+            test_images = next(test_iterator)
+            test_images = np.array(test_images, dtype=np.float32) / 255.0
             # reconstruction
-            reconst, latent = reconstruct(batch_images)
+            reconst, latent = reconstruct(test_images)
 
             # show reconstructed images
             reconst_images = np.array(reconst * 255, dtype=np.uint8)
@@ -78,7 +84,7 @@ def main():
             cv2.imshow('test', reconst_tiled_images)
 
             # show original images
-            original_images = np.array(batch_images * 255, dtype=np.uint8)
+            original_images = np.array(test_images * 255, dtype=np.uint8)
             original_tiled_images = tile_images(original_images)
             cv2.imshow('original', original_tiled_images)
 
