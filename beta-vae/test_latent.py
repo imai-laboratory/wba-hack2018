@@ -14,7 +14,7 @@ def main():
     parser.add_argument('--model', type=str)
     parser.add_argument('--config', type=str)
     parser.add_argument('--data', type=str)
-    parser.add_argument('--split', type=int, default=4)
+    parser.add_argument('--split', type=int, default=2)
     args = parser.parse_args()
 
     # restore configuration
