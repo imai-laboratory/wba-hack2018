@@ -18,7 +18,7 @@ RUN if [ ! -e /usr/bin/python ]; then ln -sf /usr/bin/python3 /usr/bin/python; f
 COPY requirements.txt /tmp
 
 RUN pip install --upgrade pip setuptools && \
-    pip --no-cache-dir install -r /tmp/requirements.txt
+    pip --no-cache-dir install -r /tmp/requirements.txt &&\
     pip install git+https://github.com/imai-laboratory/rlsaber
 
 ENV CONTAINER_APP /opt/oculomotor
