@@ -30,7 +30,8 @@ def build(constants):
     # build graphs
     reconstruct,\
     generate,\
-    train = build_graph(
+    train,\
+    saliency = build_graph(
         encoder=encoder,
         decoder=decoder,
         sample_latent=sample_latent,
@@ -38,7 +39,7 @@ def build(constants):
         latent_size=constants.LATENT_SIZE,
         lr=constants.LR
     )
-    return reconstruct, generate, train
+    return reconstruct, generate, train, saliency
 
 def main():
     date = datetime.now().strftime('%Y%m%d%H%M%S')
@@ -53,7 +54,7 @@ def main():
                                       constants.BATCH_SIZE, constants.EPOCH)
 
     # make network
-    reconstruct, generate, train = build(constants)
+    reconstruct, generate, train, _ = build(constants)
 
     sess = tf.Session()
     sess.__enter__()

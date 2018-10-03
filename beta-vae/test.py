@@ -22,7 +22,7 @@ def main():
     constants = restore_constants(args.config)
 
     # make network
-    reconstruct, generate, train = build(constants)
+    reconstruct, generate, train, _ = build(constants)
 
     sess = tf.Session()
     sess.__enter__()

@@ -26,7 +26,7 @@ def main():
                                constants.BATCH_SIZE, constants.EPOCH)
 
     # make network
-    reconstruct, generate_from_latent, train = build(constants)
+    reconstruct, generate_from_latent, train, _ = build(constants)
 
     sess = tf.Session()
     sess.__enter__()
