@@ -1,6 +1,11 @@
 import numpy as np
+import tensorflow as tf
 import brica
+import ppo.constants as constants
 
+from ppo.agent import Agent
+from ppo.network import make_network
+from ppo.scheduler import LinearScheduler, ConstantScheduler
 
 """
 This is an example implemention of BG (Basal ganglia) module.
@@ -10,8 +15,54 @@ You can change this as you like.
 class BG(object):
     def __init__(self):
         self.timing = brica.Timing(5, 1, 0)
+        state_shape = [constants.STATE_SHAPE]
+        num_actions = 1
+
+        # create network function
+        model = make_network(
+            constants.CONVS, constants.FCS, use_lstm=constants.LSTM,
+            padding=constants.PADDING, continuous=True)
+
+        # scheduled paramters
+        lr = tf.Variable(constants.LR)
+        decayed_lr = tf.placeholder(tf.float32)
+        decay_lr_op = lr.assign(decayed_lr)
+        if constants.LR_DECAY == 'linear':
+            lr = LinearScheduler(constants.LR, constants.FINAL_STEP, 'lr')
+            epsilon = LinearScheduler(
+                constants.EPSILON, constants.FINAL_STEP, 'epsilon')
+        else:
+            lr = ConstantScheduler(constants.LR, 'lr')
+            epsilon = ConstantScheduler(constants.EPSILON, 'epsilon')
+
+        self.agent = Agent(
+            model,
+            num_actions,
+            nenvs=1,
+            lr=lr,
+            epsilon=epsilon,
+            gamma=constants.GAMMA,
+            lam=constants.LAM,
+            lstm_unit=constants.LSTM_UNIT,
+            value_factor=constants.VALUE_FACTOR,
+            entropy_factor=constants.ENTROPY_FACTOR,
+            time_horizon=constants.TIME_HORIZON,
+            batch_size=constants.BATCH_SIZE,
+            grad_clip=constants.GRAD_CLIP,
+            state_shape=state_shape,
+            epoch=constants.EPOCH,
+            use_lstm=constants.LSTM,
+            continuous=True,
+            upper_bound=1.0
+        )
+
+        self.sess = tf.Session()
+        self.sess.__enter__()
+        self.sess.run(tf.global_variables_initializer())
 
     def __call__(self, inputs):
+        self.sess.__enter__()
+
         if 'from_environment' not in inputs:
             raise Exception('BG did not recieve from Environment')
         if 'from_pfc' not in inputs:
@@ -25,7 +76,14 @@ class BG(object):
 
         # Set threshold as 0.1 (as dummy test)
         likelihood_thresholds = np.ones([accmulator_size], dtype=np.float32) * 0.3
-        
+
+        # self.agent.act(input, reward, done)
+
+        # self.agent.receive_next(next_input, next_reward, next_done, update=False)
+
+        # when update parameters
+        # self.agent.receive_next(next_input, next_reward, next_done, update=True)
+
         return dict(to_pfc=None,
                     to_fef=None,
                     to_sc=likelihood_thresholds)
