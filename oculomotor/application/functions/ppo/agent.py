@@ -1,8 +1,8 @@
 import numpy as np
 import tensorflow as tf
 
-from rollout import Rollout
-from build_graph import build_train
+from .rollout import Rollout
+from .build_graph import build_train
 from rlsaber.util import compute_returns, compute_gae
 
 
