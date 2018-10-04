@@ -24,9 +24,6 @@ class BG(object):
             padding=constants.PADDING, continuous=True)
 
         # scheduled paramters
-        lr = tf.Variable(constants.LR)
-        decayed_lr = tf.placeholder(tf.float32)
-        decay_lr_op = lr.assign(decayed_lr)
         if constants.LR_DECAY == 'linear':
             lr = LinearScheduler(constants.LR, constants.FINAL_STEP, 'lr')
             epsilon = LinearScheduler(
@@ -78,11 +75,6 @@ class BG(object):
         likelihood_thresholds = np.ones([accmulator_size], dtype=np.float32) * 0.3
 
         # self.agent.act(input, reward, done)
-
-        # self.agent.receive_next(next_input, next_reward, next_done, update=False)
-
-        # when update parameters
-        # self.agent.receive_next(next_input, next_reward, next_done, update=True)
 
         return dict(to_pfc=None,
                     to_fef=None,
