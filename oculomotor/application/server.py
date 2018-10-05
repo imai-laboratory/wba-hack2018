@@ -15,11 +15,14 @@ from oculoenv import PointToTargetContent, ChangeDetectionContent, OddOneOutCont
 from inspector import Inspector
 
 import flask
+import logging
 from flask import Flask, make_response, send_from_directory
 from jinja2 import FileSystemLoader
 from werkzeug.local import Local, LocalManager
 from flask_cors import CORS
 
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 app = Flask(__name__, static_url_path='')
 CORS(app)
 app.secret_key = 'oculomotor'
