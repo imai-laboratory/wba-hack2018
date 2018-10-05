@@ -1,12 +1,12 @@
 import numpy as np
 import tensorflow as tf
 import brica
-import ppo.constants as ppconsts
-import constants as consts
+from .ppo import constants as ppconsts
+from . import constants as consts
 
-from ppo.agent import Agent
-from ppo.network import make_network
-from ppo.scheduler import LinearScheduler, ConstantScheduler
+from .ppo.agent import Agent
+from .ppo.network import make_network
+from .ppo.scheduler import LinearScheduler, ConstantScheduler
 
 """
 This is an example implemention of BG (Basal ganglia) module.
@@ -14,9 +14,18 @@ You can change this as you like.
 """
 
 class BG(object):
-    def __init__(self, num_actions):
+    def __init__(self, skip=False):
         self.timing = brica.Timing(5, 1, 0)
-        state_shape = [ppconsts.STATE_SHAPE]
+        self.skip = skip
+        self.step = 0
+        if not skip:
+            self.__initialize_rl()
+
+    def __initialize_rl(self):
+        # TODO: do we need convs?
+        # state_shape = [ppconsts.STATE_SHAPE]  # state_shape = input shape of the network
+        # state_shape = (128, 3)
+        state_shape = [128, 3]
         num_actions = consts.NUM_ACTIONS
 
         # TODO(->smatsumori): load from saved models
@@ -59,8 +68,9 @@ class BG(object):
         self.sess.__enter__()
         self.sess.run(tf.global_variables_initializer())
 
-    def __call__(self, inputs):
-        self.sess.__enter__()
+    def __call__(self, inputs, update=False):
+        # TODO; update params
+        # update True when to update parameters
 
         if 'from_environment' not in inputs:
             raise Exception('BG did not recieve from Environment')
@@ -72,14 +82,27 @@ class BG(object):
         fef_data = inputs['from_fef']
         reward = inputs['from_environment']
 
+
+        # (128, 3)
         # psudo action space (can we pass images or features?)
-        # action space will be fixed
-        accmulator_size = len(fef_data)
+        if self.skip:
+            # action space will be fixed
+            accmulator_size = len(fef_data)
+            # Set threshold as 0.1 (as dummy test)
+            likelihood_thresholds = np.ones([accmulator_size], dtype=np.float32) * 0.3
+        else:
+            # TODO(->smatsumori): check input shape
+            print(self.step, 'reward', reward)
+            fef_data = np.array(fef_data)[np.newaxis, :, :]
+            if 0 < self.step:
+                next_input = fef_data
+                next_reward = [reward[0]]
+                next_done = [reward[1]]
+                update = self.step % 100
+                self.agent.receive_next(next_input, next_reward, next_done, update=update)
 
-        # Set threshold as 0.1 (as dummy test)
-        likelihood_thresholds = np.ones([accmulator_size], dtype=np.float32) * 0.3
-
-        # self.agent.act(input, reward, done)
+            self.step += 1
+            likelihood_thresholds = self.agent.act(fef_data, reward[-1], reward[1])[0]
 
         return dict(to_pfc=None,
                     to_fef=None,

@@ -2,7 +2,7 @@ FROM ubuntu:xenial
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential software-properties-common cmake curl python3-dev \
-    libgl1-mesa-dri libgl1-mesa-glx libglu1-mesa-dev xvfb x11-utils libasio-dev && \
+    libgl1-mesa-dri libgl1-mesa-glx libglu1-mesa-dev xvfb x11-utils libasio-dev git && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -18,7 +18,7 @@ RUN if [ ! -e /usr/bin/python ]; then ln -sf /usr/bin/python3 /usr/bin/python; f
 COPY requirements.txt /tmp
 
 RUN pip install --upgrade pip setuptools && \
-    pip --no-cache-dir install -r /tmp/requirements.txt
+    pip --no-cache-dir install -r /tmp/requirements.txt &&\
     pip install git+https://github.com/imai-laboratory/rlsaber
 
 ENV CONTAINER_APP /opt/oculomotor

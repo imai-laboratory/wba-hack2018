@@ -39,7 +39,7 @@ class ActionAccumulator(object):
 
         # Connected accmulators
         self.target_accmulators = []
-        
+
     def accumulate(self, value):
         self.likelihood += value
 
@@ -53,7 +53,6 @@ class ActionAccumulator(object):
     def post_process(self):
         # Clip likelihood
         self.likelihood = np.clip(self.likelihood, 0.0, 1.0)
-        
         # Decay likelihood
         self.likelihood *= self.decay_rate
 
@@ -74,7 +73,7 @@ class SaliencyAccumulator(ActionAccumulator):
         # Pixel x,y pos at left top corner of the region.
         self.pixel_x = pixel_x
         self.pixel_y = pixel_y
-        
+
     def process(self, saliency_map):
         # Crop region image
         region_saliency = saliency_map[self.pixel_y:self.pixel_y+GRID_WIDTH,
@@ -82,7 +81,7 @@ class SaliencyAccumulator(ActionAccumulator):
         average_saliency = np.mean(region_saliency)
         self.accumulate(average_saliency * SALIENCY_COEFF)
         self.expose()
-        
+
 
 class CursorAccumulator(ActionAccumulator):
     def __init__(self, pixel_x, pixel_y, ex, ey, cursor_template):
@@ -91,9 +90,9 @@ class CursorAccumulator(ActionAccumulator):
         self.pixel_x = pixel_x
         self.pixel_y = pixel_y
         self.cursor_template = cursor_template
-        
+
     def process(self, retina_image):
-        # Crop region image
+        # Crop region image (to the region)
         region_image = retina_image[self.pixel_y:self.pixel_y+GRID_WIDTH,
                                     self.pixel_x:self.pixel_x+GRID_WIDTH, :]
         # Calculate template matching
@@ -103,39 +102,39 @@ class CursorAccumulator(ActionAccumulator):
         match_rate = np.max(match)
         self.accumulate(match_rate * CURSOR_MATCH_COEFF)
         self.expose()
-        
+
 
 class FEF(object):
     def __init__(self):
         self.timing = brica.Timing(4, 1, 0)
-        
         self.saliency_accumulators = []
         self.cursor_accumulators = []
-        
         cursor_template = load_image("data/debug_cursor_template_w.png")
-        
+
+        # devide and create accumulators for each region
         for ix in range(GRID_DIVISION):
             pixel_x = GRID_WIDTH * ix
             cx = 2.0 / GRID_DIVISION * (ix + 0.5) - 1.0
-            
             for iy in range(GRID_DIVISION):
                 pixel_y = GRID_WIDTH * iy
                 cy = 2.0 / GRID_DIVISION * (iy + 0.5) - 1.0
-                
+
                 ex = -cx
                 ey = -cy
-                
+
+                # accumulators shape (GRID_DIVISION**2, ) * 2
                 saliency_accumulator = SaliencyAccumulator(pixel_x, pixel_y, ex, ey)
                 self.saliency_accumulators.append(saliency_accumulator)
-                
+
+                # TODO: want to remove this!
                 cursor_accumulator = CursorAccumulator(pixel_x, pixel_y, ex, ey,
                                                        cursor_template)
                 self.cursor_accumulators.append(cursor_accumulator)
 
-
+        # TODO: check what means accumulator connection
         # Accmulator connection sample
-        #self.saliency_accumulators[0].connect_to(self.saliency_accumulators[1])
-                
+        # self.saliency_accumulators[0].connect_to(self.saliency_accumulators[1])
+
     def __call__(self, inputs):
         if 'from_lip' not in inputs:
             raise Exception('FEF did not recieve from LIP')
@@ -150,8 +149,10 @@ class FEF(object):
 
         saliency_map, optical_flow = inputs['from_lip']
         retina_image = inputs['from_vc']
-        
+
         # TODO: 領野をまたいだ共通phaseをどう定義するか？
+        # Update accumulator
+        # phase == 0 finding cursor
         if phase == 0:
             for cursor_accumulator in self.cursor_accumulators:
                 cursor_accumulator.process(retina_image)
@@ -159,13 +160,18 @@ class FEF(object):
             for saliency_accumulator in self.saliency_accumulators:
                 saliency_accumulator.process(saliency_map)
 
+        # discount accumulator
+        # TODO: discount after collecting outputs?
         for saliency_accumulator in self.saliency_accumulators:
             saliency_accumulator.post_process()
         for cursor_accumulator in self.cursor_accumulators:
             cursor_accumulator.post_process()
-        
+
+        # collect all outputs
         output = self._collect_output()
-        
+
+        # TODO: pass feature extracted to bg?
+        # NOTE: do not change the output size of to_sc (=action space of BG)
         return dict(to_pfc=None,
                     to_bg=output,
                     to_sc=output,

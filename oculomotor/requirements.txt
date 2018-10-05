@@ -9,6 +9,7 @@ pybind11
 BriCA2
 oculoenv==0.1.3
 tensorflow
+scipy
 chainer
 torch
 torchvision
