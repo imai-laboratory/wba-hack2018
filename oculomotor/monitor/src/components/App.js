@@ -23,7 +23,7 @@ class App extends Component {
     this.props.initialize()
     this.handler = setInterval(() => {
       this.props.getInfo().then(this.props.callAgent)
-    }, 30)
+    }, 10)
   }
 
   componentWillUnmount =() => {
