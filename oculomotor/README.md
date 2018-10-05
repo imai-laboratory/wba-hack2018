@@ -26,7 +26,7 @@ $ git clone --recursive https://github.com/wbap/oculomotor
 #### Build the docker containers
 ```
 $ cd oculomotor
-$ docker build -t wbap/oculomotor .
+$ build-gpu.sh or build-cpu.sh
 ```
 
 #### Edit the files under `application/functions` as you like
