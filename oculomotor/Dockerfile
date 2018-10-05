@@ -1,4 +1,5 @@
-FROM nvidia/cuda:9.0-cudnn7-devel-ubuntu16.04
+#FROM nvidia/cuda:9.0-cudnn7-devel-ubuntu16.04
+FROM tensorflow/tensorflow:latest-gpu
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential software-properties-common cmake curl python3-dev \
@@ -6,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y libsm6 libxext6 libxrender1 && \
+RUN apt-get update && apt-get install -y libsm6 libxext6 libxrender1 git && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -18,7 +19,8 @@ RUN if [ ! -e /usr/bin/python ]; then ln -sf /usr/bin/python3 /usr/bin/python; f
 COPY requirements.txt /tmp
 
 RUN pip install --upgrade pip setuptools && \
-    pip --no-cache-dir install -r /tmp/requirements.txt
+    pip --no-cache-dir install -r /tmp/requirements.txt &&\
+    pip install git+https://github.com/imai-laboratory/rlsaber
 
 ENV CONTAINER_APP /opt/oculomotor
 WORKDIR ${CONTAINER_APP}
@@ -35,9 +37,6 @@ ENV FLASK_ENV development
 ENV XVFB_WHD="1920x1080x24"
 ENV DISPLAY=":99"
 
-# add for development
-RUN apt-get update && apt-get upgrade && apt-get install -y git vim
+ENTRYPOINT ["/opt/oculomotor/helpers/entrypoint.sh"]
 
-#ENTRYPOINT ["/opt/oculomotor/helpers/entrypoint.sh"]
-
-#CMD ["flask", "run", "--host=0.0.0.0"]
+CMD ["flask", "run", "--host=0.0.0.0"]

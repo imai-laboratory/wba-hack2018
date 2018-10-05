@@ -82,8 +82,7 @@ class BG(object):
         fef_data = inputs['from_fef']
         reward = inputs['from_environment']
 
-
-        # (128, 3)
+        # default FEF shape.(128, 3)
         # psudo action space (can we pass images or features?)
         if self.skip:
             # action space will be fixed
