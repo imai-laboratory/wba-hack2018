@@ -35,6 +35,9 @@ ENV FLASK_ENV development
 ENV XVFB_WHD="1920x1080x24"
 ENV DISPLAY=":99"
 
+# add for development
+RUN apt-get update && apt-get upgrade && apt-get install -y git vim
+
 #ENTRYPOINT ["/opt/oculomotor/helpers/entrypoint.sh"]
 
 #CMD ["flask", "run", "--host=0.0.0.0"]
