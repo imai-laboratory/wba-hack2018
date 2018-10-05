@@ -64,7 +64,9 @@ class BG(object):
             upper_bound=1.0
         )
 
-        self.sess = tf.Session()
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        self.sess = tf.Session(config=config)
         self.sess.__enter__()
         self.sess.run(tf.global_variables_initializer())
 
