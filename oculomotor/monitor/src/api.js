@@ -2,7 +2,7 @@ const json = response => response.json()
 const text = response => response.text()
 
 const host = 'http://localhost:5000'
-const url = path => `${host}/${path}`
+const url = path => `/${path}`
 
 const init = () => fetch(url('init')).then(json)
 const info = () => fetch(url('info')).then(json)
