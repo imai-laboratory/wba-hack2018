@@ -13,3 +13,4 @@ scipy
 chainer
 torch
 torchvision
+git+https://github.com/imai-laboratory/rlsaber
