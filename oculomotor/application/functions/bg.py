@@ -82,7 +82,10 @@ class BG(object):
             raise Exception('BG did not recieve from FEF')
 
         fef_data = inputs['from_fef']
-        reward = inputs['from_environment']
+        pfc_data = inputs['from_pfc']
+        if 0 < pfc_data:
+            print("\033 internal reward!! \033[0m")
+        reward, done = inputs['from_environment'][0] + pfc_data, inputs['from_environment'][1]
 
         # default FEF shape.(128, 3) -> (64, 3)
         # psudo action space (can we pass images or features?)
@@ -94,9 +97,9 @@ class BG(object):
         else:
             with self.sess.as_default():
                 # TODO(->smatsumori): check input shape
-                print(self.step, 'reward', reward[0])
+                print(self.step, 'reward', reward)
                 fef_data = np.array(fef_data)[np.newaxis, :, :]
-                likelihood_thresholds = self.agent.act(fef_data, [reward[0]], [reward[1]])[0]
+                likelihood_thresholds = self.agent.act(fef_data, [reward], [done])[0]
                 self.step += 1
 
         return dict(to_pfc=None,
