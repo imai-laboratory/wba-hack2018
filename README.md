@@ -8,7 +8,7 @@ docker build -t wbap/oculomotor ./oculomotor/
 ### Running in Interactive Mode
 ```bash
 cd wba-hack2018
-./oculomotor/helpers/interactive.sh
+./oculomotor/helpers/gpu_interactive.sh
 ```
 
 ## 訓練データ作成方法
