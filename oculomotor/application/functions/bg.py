@@ -14,14 +14,18 @@ You can change this as you like.
 """
 
 class BG(object):
-    def __init__(self, skip=True):
+    def __init__(self, skip=False):
         self.timing = brica.Timing(5, 1, 0)
+        self.skip = skip
+        self.step = 0
         if not skip:
             self.__initialize_rl()
 
     def __initialize_rl(self):
         # TODO: do we need convs?
-        state_shape = [ppconsts.STATE_SHAPE]  # state_shape = input shape of the network
+        # state_shape = [ppconsts.STATE_SHAPE]  # state_shape = input shape of the network
+        # state_shape = (128, 3)
+        state_shape = [128, 3]
         num_actions = consts.NUM_ACTIONS
 
         # TODO(->smatsumori): load from saved models
@@ -70,7 +74,6 @@ class BG(object):
     def __call__(self, inputs, update=False):
         # TODO; update params
         # update True when to update parameters
-        self.sess.__enter__()
 
         if 'from_environment' not in inputs:
             raise Exception('BG did not recieve from Environment')
@@ -82,8 +85,8 @@ class BG(object):
         fef_data = inputs['from_fef']
         reward = inputs['from_environment']
 
-        print('fef', fef_data)
 
+        # (128, 3)
         # psudo action space (can we pass images or features?)
         if self.skip:
             # action space will be fixed
@@ -92,8 +95,17 @@ class BG(object):
             likelihood_thresholds = np.ones([accmulator_size], dtype=np.float32) * 0.3
         else:
             # TODO(->smatsumori): check input shape
-            action = self.agent.act(fef_data, reward, done)
-            self.agent.receive_next(next_input, next_reward, next_done, update=update)
+            print(self.step, 'reward', reward)
+            fef_data = np.array(fef_data)[np.newaxis, :, :]
+            if 0 < self.step:
+                next_input = fef_data
+                next_reward = [reward[0]]
+                next_done = [reward[1]]
+                update = self.step % 100
+                self.agent.receive_next(next_input, next_reward, next_done, update=update)
+
+            self.step += 1
+            likelihood_thresholds = self.agent.act(fef_data, reward[-1], reward[1])[0]
 
         return dict(to_pfc=None,
                     to_fef=None,
