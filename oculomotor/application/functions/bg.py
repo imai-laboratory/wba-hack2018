@@ -93,15 +93,8 @@ class BG(object):
             # TODO(->smatsumori): check input shape
             print(self.step, 'reward', reward)
             fef_data = np.array(fef_data)[np.newaxis, :, :]
-            if 0 < self.step:
-                next_input = fef_data
-                next_reward = [reward[0]]
-                next_done = [reward[1]]
-                update = self.step % 100
-                self.agent.receive_next(next_input, next_reward, next_done, update=update)
-
+            likelihood_thresholds = self.agent.act(fef_data, [reward[-1]], [reward[1]])[0]
             self.step += 1
-            likelihood_thresholds = self.agent.act(fef_data, reward[-1], reward[1])[0]
 
         return dict(to_pfc=None,
                     to_fef=None,
