@@ -43,6 +43,8 @@ class Inspector(object):
         self.hp = HP()
         self.cb = CB()
 
+        self.step = 0
+
         self.agent = Agent(
             retina=self.retina,
             lip=self.lip,
@@ -203,14 +205,19 @@ class Inspector(object):
         self.draw_center_text(label, 128 / 2 + left, top + 128 + 8)
 
     def process(self):
+        self.step += 1
         action = self.agent(self.last_image, self.last_angle, self.last_reward,
                             self.last_done)
         obs, reward, done, _ = self.env.step(action)
 
         self.episode_reward += reward
 
+        # TODO: remove this
+        done = done  or self.step % 100 == 0
+
         if done:
             obs = self.env.reset()
+            print("\033[93m episode reward={} \033[0m".format(self.episode_reward))
             self.episode_reward = 0
 
         image = obs['screen']
