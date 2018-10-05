@@ -90,11 +90,12 @@ class BG(object):
             # Set threshold as 0.1 (as dummy test)
             likelihood_thresholds = np.ones([accmulator_size], dtype=np.float32) * 0.3
         else:
-            # TODO(->smatsumori): check input shape
-            print(self.step, 'reward', reward)
-            fef_data = np.array(fef_data)[np.newaxis, :, :]
-            likelihood_thresholds = self.agent.act(fef_data, [reward[-1]], [reward[1]])[0]
-            self.step += 1
+            with self.sess.as_default():
+                # TODO(->smatsumori): check input shape
+                print(self.step, 'reward', reward)
+                fef_data = np.array(fef_data)[np.newaxis, :, :]
+                likelihood_thresholds = self.agent.act(fef_data, [reward[0]], [reward[1]])[0]
+                self.step += 1
 
         return dict(to_pfc=None,
                     to_fef=None,
