@@ -1,4 +1,16 @@
 # wba-hack2018
+## Docker for GPU
+### build docker container
+```bash
+cd wba-hack2018
+docker build -t wbap/oculomotor ./oculomotor/
+```
+### Running in Interactive Mode
+```bash
+cd wba-hack2018
+./oculomotor/helpers/interactive.sh
+```
+
 ## 訓練データ作成方法
 ### OddOneOut
 ```bash
