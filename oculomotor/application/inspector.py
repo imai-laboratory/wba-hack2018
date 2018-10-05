@@ -43,6 +43,8 @@ class Inspector(object):
         self.hp = HP()
         self.cb = CB()
 
+        self.step = 0
+
         self.agent = Agent(
             retina=self.retina,
             lip=self.lip,
@@ -150,6 +152,22 @@ class Inspector(object):
         self.draw_text("REWARD: {}".format(int(self.episode_reward)),
                        128 * 3 + 24, 128 + 48)
 
+    def show_bg_data_bars(self, bg_data):
+        bg_data_len = len(bg_data)
+
+        bottom = 512 + 16
+        pygame.draw.line(self.surface, DARK_GRAY, (8, bottom - 100),
+                         (3 * bg_data_len + 8, bottom - 100), 1)
+
+        for i, threshold in enumerate(bg_data):
+            left = 8 + 3 * i
+            top = bottom - 30 * threshold
+            pygame.draw.line(self.surface, WHITE, (left, top), (left, bottom),
+                             1)
+
+        self.draw_center_text("thresholds", (8 + 3 * bg_data_len) // 2,
+                              bottom + 8)
+
     def show_fef_data_bars(self, fef_data):
         fef_data_len = len(fef_data)
 
@@ -203,14 +221,19 @@ class Inspector(object):
         self.draw_center_text(label, 128 / 2 + left, top + 128 + 8)
 
     def process(self):
+        self.step += 1
         action = self.agent(self.last_image, self.last_angle, self.last_reward,
                             self.last_done)
         obs, reward, done, _ = self.env.step(action)
 
         self.episode_reward += reward
 
+        # TODO: remove this
+        done = done  or self.step % 100 == 0
+
         if done:
             obs = self.env.reset()
+            print("\033[93m episode reward={} \033[0m".format(self.episode_reward))
             self.episode_reward = 0
 
         image = obs['screen']
@@ -235,6 +258,9 @@ class Inspector(object):
 
         if self.hp.map_image is not None:
             self.show_map_image(self.hp.map_image)
+
+        if self.bg.last_bg_data is not None:
+            self.show_bg_data_bars(self.bg.last_bg_data)
 
         self.last_image = image
         self.last_angle = angle

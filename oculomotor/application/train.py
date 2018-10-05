@@ -88,12 +88,14 @@ def train(content, step_size, logger):
         action = agent(image, angle, reward, done)
         # Foward environment one step
         obs, reward, done, _ = env.step(action)
-        
         episode_reward += reward
+
+        # TODO: remove this
+        done = done or i % 100 == 0
 
         if done:
             obs = env.reset()
-            print("episode reward={}".format(episode_reward))
+            print("\033[93m episode reward={} \033[0m".format(episode_reward))
 
             # Store log for tensorboard graph
             episode_count += 1

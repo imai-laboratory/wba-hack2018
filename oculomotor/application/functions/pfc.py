@@ -50,6 +50,7 @@ class PFC(object):
         self.cursor_find_accmulator = CursorFindAccumulator()
 
         self.phase = Phase.INIT
+        self.prev_phase = self.phase
 
 
     def __call__(self, inputs):
@@ -71,13 +72,16 @@ class PFC(object):
         # You should change here as you like.
         self.cursor_find_accmulator.process(retina_image)
         self.cursor_find_accmulator.post_process()
+        bg_message = 0
 
         if self.phase == Phase.INIT:
             if self.cursor_find_accmulator.likelihood > 0.7:
                 self.phase = Phase.START
+                bg_message = 1
         elif self.phase == Phase.START:
             if self.cursor_find_accmulator.likelihood < 0.4:
                 self.phase = Phase.TARGET
+                bg_message = 1
         else:
             if self.cursor_find_accmulator.likelihood > 0.6:
                 self.phase = Phase.START
@@ -85,9 +89,10 @@ class PFC(object):
         # TODO: update fef_message signal
         if self.phase == Phase.INIT or self.phase == Phase.START:
             # TODO: 領野をまたいだ共通phaseをどう定義するか？
-            fef_message = 0
+            # original 0
+            fef_message = 1
         else:
             fef_message = 1
 
         return dict(to_fef=fef_message,
-                    to_bg=None)
+                    to_bg=bg_message)

@@ -20,6 +20,7 @@ class BG(object):
         self.step = 0
         if not skip:
             self.__initialize_rl()
+        self.last_bg_data = None
 
     def __initialize_rl(self):
         # TODO: do we need convs?
@@ -82,9 +83,12 @@ class BG(object):
             raise Exception('BG did not recieve from FEF')
 
         fef_data = inputs['from_fef']
-        reward = inputs['from_environment']
+        pfc_data = inputs['from_pfc']
+        if 0 < pfc_data:
+            print("\033 internal reward!! \033[0m")
+        reward, done = inputs['from_environment'][0] + pfc_data, inputs['from_environment'][1]
 
-        # default FEF shape.(128, 3)
+        # default FEF shape.(128, 3) -> (64, 3)
         # psudo action space (can we pass images or features?)
         if self.skip:
             # action space will be fixed
@@ -94,10 +98,10 @@ class BG(object):
         else:
             with self.sess.as_default():
                 # TODO(->smatsumori): check input shape
-                print(self.step, 'reward', reward)
                 fef_data = np.array(fef_data)[np.newaxis, :, :]
-                likelihood_thresholds = self.agent.act(fef_data, [reward[0]], [reward[1]])[0]
+                likelihood_thresholds = self.agent.act(fef_data, [reward], [done])[0]
                 self.step += 1
+                self.last_bg_data = likelihood_thresholds
 
         return dict(to_pfc=None,
                     to_fef=None,

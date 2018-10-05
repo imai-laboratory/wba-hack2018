@@ -21,7 +21,16 @@ class SC(object):
         # Likelihoods and eye movment params from accumulators in FEF module.
         fef_data = inputs['from_fef']
         # Likelihood thresolds from BG module.
-        bg_data = inputs['from_bg']
+        # bg input (4)
+        bg_in = inputs['from_bg']
+        bg_12 = np.tile(
+            np.concatenate((np.tile([bg_in[0]], 4), np.tile([bg_in[1]], 4)), axis=0), 4
+        )
+        bg_34 = np.tile(
+            np.concatenate((np.tile([bg_in[2]], 4), np.tile([bg_in[3]], 4)), axis=0), 4
+        )
+        bg_1234 = np.concatenate((bg_12, bg_34), axis=0)
+        bg_data = np.tile(bg_1234, 2).tolist()
 
         action = self._decide_action(fef_data, bg_data)
         
