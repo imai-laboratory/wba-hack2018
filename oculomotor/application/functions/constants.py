@@ -1,1 +1,1 @@
-NUM_ACTIONS = 10  # number of actions in bg
+NUM_ACTIONS = 128  # number of actions in bg
