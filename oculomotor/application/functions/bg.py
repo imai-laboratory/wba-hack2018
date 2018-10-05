@@ -20,6 +20,7 @@ class BG(object):
         self.step = 0
         if not skip:
             self.__initialize_rl()
+        self.last_bg_data = None
 
     def __initialize_rl(self):
         # TODO: do we need convs?
@@ -98,6 +99,7 @@ class BG(object):
                 fef_data = np.array(fef_data)[np.newaxis, :, :]
                 likelihood_thresholds = self.agent.act(fef_data, [reward[0]], [reward[1]])[0]
                 self.step += 1
+                self.last_bg_data = likelihood_thresholds
 
         return dict(to_pfc=None,
                     to_fef=None,
