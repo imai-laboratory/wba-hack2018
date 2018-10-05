@@ -82,7 +82,7 @@ class BG(object):
         fef_data = inputs['from_fef']
         reward = inputs['from_environment']
 
-        # default FEF shape.(128, 3)
+        # default FEF shape.(128, 3) -> (64, 3)
         # psudo action space (can we pass images or features?)
         if self.skip:
             # action space will be fixed
@@ -92,7 +92,7 @@ class BG(object):
         else:
             with self.sess.as_default():
                 # TODO(->smatsumori): check input shape
-                print(self.step, 'reward', reward)
+                print(self.step, 'reward', reward[0])
                 fef_data = np.array(fef_data)[np.newaxis, :, :]
                 likelihood_thresholds = self.agent.act(fef_data, [reward[0]], [reward[1]])[0]
                 self.step += 1
