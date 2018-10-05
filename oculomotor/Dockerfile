@@ -1,5 +1,5 @@
 #FROM nvidia/cuda:9.0-cudnn7-devel-ubuntu16.04
-FROM tensorflow/tensorflow:latest-gpu
+FROM tensorflow/tensorflow:latest-gpu-py3
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential software-properties-common cmake curl python3-dev \
