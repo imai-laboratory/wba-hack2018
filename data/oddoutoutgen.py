@@ -7,10 +7,11 @@ parser = argparse.ArgumentParser(
 parser.add_argument('--episode', type=int, default=10)
 parser.add_argument('--length', type=int, default=100)
 parser.add_argument('--scene', type=int, default=1000)
+parser.add_argument('--retina', action='store_true')
 args = parser.parse_args()
 
 def main(args):
-    dg = DataGenerator(content_name='OddOneOutContent')
+    dg = DataGenerator(content_name='OddOneOutContent', retina=args.retina)
     print('egocentric images: {} episode, {} length'.format(args.episode, args.length))
     print('allocentric images: {} scene'.format(args.scene))
     print('image shape: {} height, {} width, {} channel'.format(128, 128, 3))
