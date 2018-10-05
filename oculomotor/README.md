@@ -35,6 +35,8 @@ $ build-gpu.sh or build-cpu.sh
 #### Run the container using the helper script
 ```
 $ ./helpers/interactive.sh
+# on GPU
+$ ./helpers/gpu_interactive.sh
 ```
 
 #### Open the monitor interface in the browser
@@ -48,6 +50,8 @@ Access the monitor. [http://0.0.0.0:5000/monitor/index.html](http://0.0.0.0:5000
 #### Run the container using the helper script
 ```
  $ ./helpers/train.sh --content=1 --step_size=1000000 --log_file=experiment0
+ # on GPU
+ $ ./helpers/gpu_train.sh --content=1 --step_size=1000000 --log_file=experiment0
 ```
 
 ### Show training graph
@@ -55,6 +59,8 @@ Access the monitor. [http://0.0.0.0:5000/monitor/index.html](http://0.0.0.0:5000
 #### Show training graph with TensorBoard tool.
 ```
  $ ./helpers/board.sh
+ # on GPU
+ $ ./helpers/gpu_board.sh
 ```
 Access the log page. [http://0.0.0.0:6006/](http://0.0.0.0:6006/)
 
