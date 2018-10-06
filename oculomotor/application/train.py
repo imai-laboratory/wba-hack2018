@@ -44,7 +44,7 @@ def train(content, step_size, logger, args):
     vc = VC()
     pfc = PFC()
     fef = FEF()
-    bg = BG(args.model_name)
+    bg = BG(model_name)
     sc = SC()
     hp = HP()
     cb = CB()
@@ -123,13 +123,14 @@ def main():
                         default=1)
     parser.add_argument("--step_size", help="Training step size", type=int, default=1000000)
     parser.add_argument("--log_file", help="Log file name", type=str, default="experiment0")
-    parser.add_argument("--model_name", help="Model name", default=None)
+    parser.add_argument("--model_name", help="Model name", type=str, default=None)
     
     args = parser.parse_args()
     
     content_type = args.content
     step_size = args.step_size
     log_file = args.log_file
+    model_name = args.model_name
 
     # Create task content
     content = get_content(content_type)
