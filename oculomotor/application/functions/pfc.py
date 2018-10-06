@@ -90,7 +90,7 @@ class PFC(object):
         if self.phase == Phase.INIT or self.phase == Phase.START:
             # TODO: 領野をまたいだ共通phaseをどう定義するか？
             # original 0
-            fef_message = 1
+            fef_message = 0
         else:
             fef_message = 1
 

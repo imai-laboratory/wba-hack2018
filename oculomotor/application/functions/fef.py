@@ -97,7 +97,9 @@ class CursorAccumulator(ActionAccumulator):
                                     self.pixel_x:self.pixel_x+GRID_WIDTH, :]
         # Calculate template matching
         match = cv2.matchTemplate(region_image, self.cursor_template,
-                                  cv2.TM_CCOEFF_NORMED)
+                                  cv2.TM_CCOEFF_NORMED
+                                  #cv2.TM_SQDIFF
+                                  )
         # Find the maximum match value
         match_rate = np.max(match)
         self.accumulate(match_rate * CURSOR_MATCH_COEFF)
