@@ -203,6 +203,17 @@ class Inspector(object):
         self.show_grid(likelihoods1, 0, grid_division, grid_width, 8 + 128,
                        300, "cursor acc")
 
+    def show_vae_reconstruction_grid(self, vae_data):
+        data_len = len(vae_data)
+        width = vae_data[0].shape[0]
+        for i, image in enumerate(vae_data):
+            image = np.array(image)[0] * 255.0
+            image = np.array(image, dtype=np.uint8)
+            image = cv2.resize(image, (128, 128))
+            image = np.transpose(image, [2, 0, 1])
+            image = np.ascontiguousarray(image, dtype=np.uint8)
+            self.show_image(image, 8+i*width, 700, "vae{}".format(i))
+
     def show_grid(self, data, offset, grid_division, grid_width, left, top,
                   label):
         index = 0
@@ -261,6 +272,9 @@ class Inspector(object):
 
         if self.bg.last_bg_data is not None:
             self.show_bg_data_bars(self.bg.last_bg_data)
+
+        if self.vc.last_vae_reconstruction is not None:
+            self.show_vae_reconstruction_grid(self.vc.last_vae_reconstruction)
 
         self.last_image = image
         self.last_angle = angle

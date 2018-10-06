@@ -28,6 +28,7 @@ class VC(object):
             self.sess = tf.Session(config=config)
             self.sess.run(tf.global_variables_initializer())
         self.skip = skip
+        self.last_vae_reconstruction = None
 
     def __call__(self, inputs):
         """
@@ -55,8 +56,9 @@ class VC(object):
 
             # VAE reconstruction
             with self.sess.as_default():
-                reconstructed_image = self.reconstruct([reshaped_image])
+                reconstructed_image = self.reconstruct([reshaped_image])[0]
             processed_images = (retina_image, reconstructed_image)
+            self.last_vae_reconstruction = [reconstructed_image]
 
 
         # Current implementation just passes through input retina image to FEF and PFC.
