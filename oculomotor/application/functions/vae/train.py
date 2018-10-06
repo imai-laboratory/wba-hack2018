@@ -28,9 +28,7 @@ def build(constants, name='vae'):
     sample_latent = make_latent(constants.LATENT_SIZE)
 
     # build graphs
-    reconstruct,\
-    generate,\
-    train = build_graph(
+    tensors = build_graph(
         encoder=encoder,
         decoder=decoder,
         sample_latent=sample_latent,
@@ -39,7 +37,7 @@ def build(constants, name='vae'):
         lr=constants.LR,
         scope=name
     )
-    return reconstruct, generate, train
+    return tensors
 
 def main():
     date = datetime.now().strftime('%Y%m%d%H%M%S')
