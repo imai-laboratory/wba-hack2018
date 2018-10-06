@@ -49,6 +49,7 @@ def main():
 
     # get image data
     image_size = tuple(constants.IMAGE_SIZE[:-1])
+    print('reading')
     get_next, get_test = read_dataset(args.data, image_size, int(1e5),
                                       constants.BATCH_SIZE, constants.EPOCH)
 
