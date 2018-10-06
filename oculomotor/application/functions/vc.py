@@ -8,7 +8,12 @@ from .vae import constants
 
 
 model_paths = {
-    'PointToTarget': 'vae_models/pointtotarget/model.ckpt'
+    'PointToTarget': 'vae_models/pointtotarget/model.ckpt',
+    'ChangeDetection': 'vae_models/changedetection/model.ckpt',
+    'OddOneOut': 'vae_models/oddoneout/model.ckpt',
+    'VisualSearch': 'vae_models/visualsearch/model.ckpt',
+    'RandomDot': 'vae_models/randomdot/model.ckpt',
+    'MultipleObject': 'vae_models/multipleobjecttracking/model.ckpt'
 }
 
 class VC(object):
@@ -34,7 +39,7 @@ class VC(object):
                 self.generates[name] = generate
 
             config = tf.ConfigProto(
-                device_count={'GPU': 1}  # NO GPU
+                device_count={'GPU': 0}  # NO GPU
             )
             config.gpu_options.allow_growth = True
 
