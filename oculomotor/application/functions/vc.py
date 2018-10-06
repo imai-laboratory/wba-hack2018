@@ -23,7 +23,9 @@ class VC(object):
             # self.model = K.applications.vgg16.VGG16()
             # self.model = K.applications.mobilenet.MobileNet()
             self.reconstruct, self.generate, _ = build(constants)
-            config = tf.ConfigProto()
+            config = tf.ConfigProto(
+                device_count={'GPU': 1}  # NO GPU
+            )
             config.gpu_options.allow_growth = True
             self.sess = tf.Session(config=config)
             self.sess.run(tf.global_variables_initializer())
