@@ -1,6 +1,8 @@
 import numpy as np
 import brica
 
+EX_SCALE = 2
+EY_SCALE = 2
 
 class SC(object):
     """ 
@@ -33,10 +35,8 @@ class SC(object):
         bg_data = np.tile(bg_1234, 2).tolist()
 
         action = self._decide_action(fef_data, bg_data)
-        
         # Store FEF data for debug visualizer
         self.last_fef_data = fef_data
-        
         return dict(to_environment=action)
 
     def _decide_action(self, fef_data, bg_data):
@@ -46,6 +46,8 @@ class SC(object):
         assert(len(fef_data) == len(bg_data))
 
         count = 0
+        EX_SCALE = 2
+
 
         # Calculate average eye ex, ey with has likelihoods over
         # the thresholds from BG.
@@ -54,12 +56,14 @@ class SC(object):
             ex = data[1]
             ey = data[2]
             likelihood_threshold = bg_data[i]
-            
+
             if likelihood > likelihood_threshold:
-                sum_ex += ex
-                sum_ey += ey
+                nex = ex * EX_SCALE
+                ney = ey * EY_SCALE
+                sum_ex +=  min(1, nex)
+                sum_ey += min(1, ney)
                 count += 1
-                
+
         # Action values should be within range [-1.0~1.0]
         if count != 0:
             action = [sum_ex / count, sum_ey / count]
