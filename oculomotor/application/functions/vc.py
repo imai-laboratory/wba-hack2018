@@ -7,6 +7,10 @@ from .vae import constants
 # from tensorflow import keras as K
 
 
+model_paths = {
+    'PointToTarget': 'vae_models/pointtotarget/model.ckpt'
+}
+
 class VC(object):
     """ Visual Cortex module.
     For feature extraction we used vgg16 model in keras.
@@ -22,11 +26,34 @@ class VC(object):
             # input_shape: (224, 224, 3)
             # self.model = K.applications.vgg16.VGG16()
             # self.model = K.applications.mobilenet.MobileNet()
-            self.reconstruct, self.generate, _ = build(constants)
+            self.reconsts = {}
+            self.generates = {}
+            for i, (name, path) in enumerate(model_paths.items()):
+                reconstruct, generate, _ = build(constants, name)
+                self.reconsts[name] = reconstruct
+                self.generates[name] = generate
             config = tf.ConfigProto()
             config.gpu_options.allow_growth = True
+
             self.sess = tf.Session(config=config)
+
+            # create savers
+            savers = {}
+            for name in model_paths.keys():
+                variables = tf.get_collection(
+                    tf.GraphKeys.TRAINABLE_VARIABLES, name)
+                var_list = {}
+                for var in variables:
+                    key = var.name
+                    var_list[key.replace(name, 'vae')[:-2]] = var
+                savers[name] = tf.train.Saver(var_list)
+
+            self.sess.__enter__()
             self.sess.run(tf.global_variables_initializer())
+
+            # load all saved models
+            for name, saver in savers.items():
+                saver.restore(self.sess, model_paths[name])
         self.skip = skip
         self.last_vae_reconstruction = None
 
@@ -56,9 +83,11 @@ class VC(object):
 
             # VAE reconstruction
             with self.sess.as_default():
-                reconstructed_image = self.reconstruct([reshaped_image])[0]
-            processed_images = (retina_image, reconstructed_image)
-            self.last_vae_reconstruction = [reconstructed_image]
+                images = {}
+                for name, reconst in self.reconsts.items():
+                    images[name] = reconst([reshaped_image])[0]
+            processed_images = (retina_image, images)
+            self.last_vae_reconstruction = images
 
 
         # Current implementation just passes through input retina image to FEF and PFC.

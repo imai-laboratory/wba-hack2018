@@ -12,7 +12,7 @@ from .network import make_encoder, make_decoder, make_latent
 from tensorflow.examples.tutorials.mnist import input_data
 
 
-def build(constants):
+def build(constants, name='vae'):
     if constants.ACTIVATION == 'leaky_relu':
         activation = tf.nn.leaky_relu
     elif constants.ACTIVATION == 'relu':
@@ -36,7 +36,8 @@ def build(constants):
         sample_latent=sample_latent,
         image_size=constants.IMAGE_SIZE,
         latent_size=constants.LATENT_SIZE,
-        lr=constants.LR
+        lr=constants.LR,
+        scope=name
     )
     return reconstruct, generate, train
 
