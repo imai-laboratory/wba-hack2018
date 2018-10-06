@@ -59,7 +59,7 @@ class DataGenerator():
         return egocentric_images
     
     def save_egocentric_images(self, dirname='images', prefix='egocentric_images'):
-        dirname = str(Path(dirname).joinpath(self.content_name))
+        dirname = str(Path(dirname).joinpath('env'))
         os.makedirs(dirname, exist_ok=True)
         now = datetime.datetime.now()
         filename = prefix + '{:%Y%m%d}'.format(now) + '.npy'
@@ -90,7 +90,7 @@ class DataGenerator():
         return allocentric_images
     
     def save_allocentric_images(self, dirname='images', prefix='allocentric_images'):
-        dirname = str(Path(dirname).joinpath(self.content_name))
+        dirname = str(Path(dirname).joinpath('env'))
         os.makedirs(dirname, exist_ok=True)
         now = datetime.datetime.now()
         filename = prefix + '{:%Y%m%d}'.format(now) + '.npy'
