@@ -18,11 +18,13 @@ You can change this as you like.
 PATH = 'models'
 
 class BG(object):
-    def __init__(self, model_name, skip=False):
+    def __init__(self, model_name=None, skip=False):
         self.timing = brica.Timing(5, 1, 0)
         self.skip = skip
         self.step = 0
-        self.model_name = None
+        self.model_name = model_name
+        if model_name is not None:
+            print('loading model: {}'.format(model_name))
         if not skip:
             self.__initialize_rl()
         self.last_bg_data = None

@@ -6,6 +6,7 @@
 import os
 import time
 import base64
+import argparse
 from threading import Lock
 from http import HTTPStatus
 
@@ -39,12 +40,20 @@ contents = [
 
 display_size = (128 * 4 + 16, 1000)
 
+# parser
+parser = argparse.ArgumentParser()
+parser.add_argument("--model_name", help="Model name", default=None)
+args = parser.parse_args()
+
 
 class Runner(object):
     def __init__(self):
         self.content_id = 0
         self.difficulty = -1
-        self.inspector = Inspector(contents[self.content_id](-1), display_size)
+        self.inspector = Inspector(
+            contents[self.content_id](-1), display_size,
+            model_name=args.model_name
+        )
         self.lock = Lock()
 
     def init(self):
@@ -115,3 +124,7 @@ def difficulty(difficulty):
 @app.route('/monitor/<path:path>')
 def monitor(path):
     return send_from_directory(os.getcwd() + '/monitor/build', path)
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0')
