@@ -23,6 +23,8 @@ class BG(object):
         self.skip = skip
         self.step = 0
         self.model_name = model_name
+        if model_name is not None:
+            print('loading model: {}'.format(model_name))
         if not skip:
             self.__initialize_rl()
         self.last_bg_data = None
