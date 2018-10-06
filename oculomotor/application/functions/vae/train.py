@@ -1,11 +1,11 @@
 import numpy as np
 import tensorflow as tf
 import cv2
-import .constants
+from .constants import *
 import argparse
 import os
 
-from util import tile_images, dump_constants
+from .util import tile_images, dump_constants
 from datetime import datetime
 from .build_graph import build_graph
 from .network import make_encoder, make_decoder, make_latent

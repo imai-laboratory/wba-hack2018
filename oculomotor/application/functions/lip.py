@@ -3,7 +3,7 @@ import numpy as np
 
 import brica
 from .vae.train import build
-import  .vae.constants as constants
+from .vae import constants 
 
 
 GAUSSIAN_KERNEL_SIZE = (5,5)
