@@ -146,9 +146,8 @@ class FEF(object):
             raise Exception('FEF did not recieve from BG')
 
         phase = inputs['from_pfc']
-
         saliency_map, optical_flow = inputs['from_lip']
-        retina_image = inputs['from_vc']
+        retina_image, reconstructed_image = inputs['from_vc']
 
         # TODO: 領野をまたいだ共通phaseをどう定義するか？
         # Update accumulator
