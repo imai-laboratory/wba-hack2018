@@ -99,7 +99,7 @@ class CursorAccumulator(ActionAccumulator):
         red_min = np.array([150, 0, 0], np.uint8)
         red_max = np.array([255, 100, 100], np.uint8)
         region_image_red = cv2.inRange(region_image, red_min, red_max)
-        match = np.sum(region_image_red)
+        match = np.mean(region_image_red)
 
         '''        
         region_image = np.array(region_image)
