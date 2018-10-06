@@ -98,8 +98,8 @@ class CursorAccumulator(ActionAccumulator):
 
         region_image = np.array(region_image)
         region_image = region_image.reshape((-1, 3))
-        region_image = np.mean(region_image)
-        match = np.dot(region_image, np.array([255, 0, 0]))
+        region_image = np.mean(region_image, axis=0)
+        match = np.dot(region_image, np.array([0, 255, 0])) // 65000
 
         '''
         # add
