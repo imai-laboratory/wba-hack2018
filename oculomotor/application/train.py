@@ -48,7 +48,7 @@ def train(content, step_size, logger, model_name):
     sc = SC()
     hp = HP()
     cb = CB()
-    
+
     agent = Agent(
         retina=retina,
         lip=lip,
@@ -60,7 +60,7 @@ def train(content, step_size, logger, model_name):
         hp=hp,
         cb=cb
     )
-    
+
     env = Environment(content)
 
     # If your training code is written inside BG module, please add model load code here like.
