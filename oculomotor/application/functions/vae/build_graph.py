@@ -46,6 +46,16 @@ def build_graph(encoder,
         opt = tf.train.AdamOptimizer(lr)
         opt_expr = opt.minimize(loss, var_list=var_list)
 
+        output = {
+            'input': input_ph,
+            'keep_prob': keep_prob_ph,
+            'deterministic': deterministic_ph,
+            'latent_ph': latent,
+            'reconst': reconst,
+            'mu': mu,
+            'generate': generate
+        }
+
     def reconstruct(inputs):
         feed_dict = {
             input_ph: inputs,
@@ -74,4 +84,4 @@ def build_graph(encoder,
         sess = tf.get_default_session()
         return sess.run([loss, opt_expr], feed_dict=feed_dict)[0]
 
-    return reconstruct, generate_from_latent, train
+    return output
