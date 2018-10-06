@@ -1,9 +1,6 @@
 import os
 import numpy as np
-from oculoenv import OddOneOutContent 
-from oculoenv import MultipleObjectTrackingContent
 from oculoenv import Environment
-from oculoenv import PointToTargetContent
 from oculoenv.utils import deg2rad
 import matplotlib.pyplot as plt
 from pathlib import Path
@@ -14,17 +11,10 @@ import matplotlib.animation as animation
 
 
 class DataGenerator():
-    def __init__(self, content_name, retina=False):
+    def __init__(self, content, retina=False):
         self.CAMERA_INITIAL_ANGLE_V = deg2rad(10.0)
         # TODO: 他の環境も指定できるようにする
-        self.content_name = content_name
-        if self.content_name == 'OddOneOutContent':
-            self.content = OddOneOutContent()
-        elif self.content_name == 'MultipleObjectTrackingContent':
-            self.content = MultipleObjectTrackingContent()
-        elif self.content_name == 'PointToTargetContent':
-        else:
-            raise ValueError('{} is invalid content.'.format(content_name))
+        self.content = content
         self.env = Environment(self.content)
         self.egocentric_images = None
         self.allocentric_images = None
