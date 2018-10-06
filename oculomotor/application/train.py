@@ -13,7 +13,6 @@ from oculoenv import PointToTargetContent, ChangeDetectionContent, OddOneOutCont
 from logger import Logger
 
 
-
 class Contents(object):
     POINT_TO_TARGET = 1
     CHANGE_DETECTION = 2
@@ -39,13 +38,13 @@ def get_content(content_type):
     return content
 
 
-def train(content, step_size, logger):
+def train(content, step_size, logger, args):
     retina = Retina()
     lip = LIP()
     vc = VC()
     pfc = PFC()
     fef = FEF()
-    bg = BG()
+    bg = BG(args.model_name)
     sc = SC()
     hp = HP()
     cb = CB()
@@ -112,7 +111,6 @@ def train(content, step_size, logger):
     logger.close()
     
 
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--content",
@@ -126,6 +124,7 @@ def main():
                         default=1)
     parser.add_argument("--step_size", help="Training step size", type=int, default=1000000)
     parser.add_argument("--log_file", help="Log file name", type=str, default="experiment0")
+    parser.add_argument("--model_name", help="Model name", default=None)
     
     args = parser.parse_args()
     
@@ -143,7 +142,7 @@ def main():
     logger = Logger(log_path)
 
     # Start training
-    train(content, step_size, logger)
+    train(content, step_size, logger, args)
 
 
 if __name__ == '__main__':
