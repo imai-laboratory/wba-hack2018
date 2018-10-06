@@ -174,7 +174,7 @@ class FEF(object):
 
         phase = inputs['from_pfc']
         saliency_map, optical_flow = inputs['from_lip']
-        retina_image, reconstructed_image = inputs['from_vc']
+        retina_image, pixel_errors, top_errors = inputs['from_vc']
 
         # TODO: 領野をまたいだ共通phaseをどう定義するか？
         # Update accumulator

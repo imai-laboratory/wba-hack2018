@@ -64,6 +64,7 @@ class VC(object):
                 saver.restore(self.sess, model_paths[name])
         self.skip = skip
         self.last_vae_reconstruction = None
+        self.last_vae_top_errors = None
 
     def __call__(self, inputs):
         """
@@ -94,11 +95,22 @@ class VC(object):
                 recont_images = self.reconst([input_image])
                 images = OrderedDict()
                 pixel_errors = OrderedDict()
+                top_errors = OrderedDict()
                 for image, name in zip(recont_images, model_paths.keys()):
                     images[name] = image[0]
-                    pixel_errors[name] = (image[0] - input_image) ** 2
-            processed_images = (retina_image, pixel_errors)
+                    pixel_error = (image[0] - input_image) ** 2
+                    pixel_errors[name] = pixel_error
+                    # top 10% errors
+                    flatten = np.reshape(pixel_error, [-1])
+                    size = int(flatten.shape[0] * 0.01)
+                    max_indices = np.argpartition(-flatten, size)[:size]
+                    top_error = np.zeros(flatten.shape, dtype=np.float32)
+                    top_error[max_indices] = 1.0
+                    top_errors[name] = np.reshape(top_error, pixel_error.shape)
+
+            processed_images = (retina_image, pixel_errors, top_errors)
             self.last_vae_reconstruction = images
+            self.last_vae_top_errors = top_errors
 
         # Current implementation just passes through input retina image to FEF and PFC.
         # TODO: change pfc fef
