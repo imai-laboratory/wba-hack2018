@@ -85,10 +85,11 @@ class VC(object):
             )
 
             # VAE reconstruction
+            input_image = np.array(reshaped_image, dtype=np.float32) / 255.0
             with self.sess.as_default():
                 images = {}
                 for name, reconst in self.reconsts.items():
-                    images[name] = reconst([reshaped_image])[0][0]
+                    images[name] = reconst([input_image])[0][0]
             processed_images = (retina_image, images)
             self.last_vae_reconstruction = images
 
