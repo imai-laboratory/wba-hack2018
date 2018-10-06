@@ -94,21 +94,21 @@ def train(content, step_size, logger, args):
 
         if done:
             obs = env.reset()
-            print("\033[93m episode reward={} \033[0m".format(episode_reward))
+            print(
+                "\033[93m {} episode reward={} \033[0m".format(
+                    episode_count, episode_reward
+                )
+            )
 
             # Store log for tensorboard graph
             episode_count += 1
             logger.log("episode_reward", episode_reward, episode_count)
-            
             episode_reward = 0
-            
             # Plase add model save code as you like.
             if i % 100000 == 0:
                 bg.save_model()
-            
     print("training finished")
     logger.close()
-    
 
 def main():
     parser = argparse.ArgumentParser()
