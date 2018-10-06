@@ -101,8 +101,8 @@ class Runner(object):
         return 'New Content Created', HTTPStatus.OK
 
 
-image_queue = Queue(1)
-info_queue = Queue(1)
+image_queue = Queue(10)
+info_queue = Queue(10)
 lock = Lock()
 def training(image_queue, info_queue, lock):
     print('training start')
