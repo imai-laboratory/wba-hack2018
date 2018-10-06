@@ -38,7 +38,7 @@ class Inspector(object):
         self.vc = VC()
         self.pfc = PFC()
         self.fef = FEF()
-        self.bg = BG()
+        self.bg = BG('')
         self.sc = SC()
         self.hp = HP()
         self.cb = CB()
