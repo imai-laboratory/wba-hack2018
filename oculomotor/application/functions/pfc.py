@@ -73,15 +73,19 @@ class PFC(object):
         self.cursor_find_accmulator.process(retina_image)
         self.cursor_find_accmulator.post_process()
         bg_message = 0
+        bg_findcursor = 0
 
         if self.phase == Phase.INIT:
             if self.cursor_find_accmulator.likelihood > 0.7:
                 self.phase = Phase.START
                 bg_message = 1
+                bg_findcursor = 1
         elif self.phase == Phase.START:
             if self.cursor_find_accmulator.likelihood < 0.4:
                 self.phase = Phase.TARGET
                 bg_message = 1
+            else:
+                bg_findcursor = 1
         else:
             if self.cursor_find_accmulator.likelihood > 0.6:
                 self.phase = Phase.START
@@ -95,4 +99,4 @@ class PFC(object):
             fef_message = 1
 
         return dict(to_fef=fef_message,
-                    to_bg=bg_message)
+                    to_bg=(bg_message, bg_findcursor))

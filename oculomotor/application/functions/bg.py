@@ -98,14 +98,16 @@ class BG(object):
             raise Exception('BG did not recieve from FEF')
 
         fef_data = inputs['from_fef']
-        pfc_data = inputs['from_pfc']
-        if 0 < pfc_data:
-            print("\033 internal reward!! \033[0m")
-        reward, done = inputs['from_environment'][0] + pfc_data, inputs['from_environment'][1]
+        pfc_data = inputs['from_pfc'][0]
+        pfc_data_findcursor = inputs['from_pfc'][1]
+        #if 0 < pfc_data:
+        #    print("\033 internal reward!! \033[0m")
+        #reward, done = inputs['from_environment'][0] + pfc_data, inputs['from_environment'][1]
+        reward, done = inputs['from_environment'][0], inputs['from_environment'][1]
 
         # default FEF shape.(128, 3) -> (64, 3)
         # psudo action space (can we pass images or features?)
-        if self.skip:
+        if self.skip or pfc_data_findcursor == 1:
             # action space will be fixed
             accmulator_size = len(fef_data)
             # Set threshold as 0.1 (as dummy test)
