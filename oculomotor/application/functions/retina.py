@@ -33,7 +33,7 @@ class Retina(object):
         # Store retina image for debug visualizer
         self.last_retina_image = retina_image
 
-        return dict(to_lip=retina_image,
+        return dict(to_lip=(retina_image, angle),
                     to_vc=retina_image,
                     to_hp=(retina_image, angle))
 
