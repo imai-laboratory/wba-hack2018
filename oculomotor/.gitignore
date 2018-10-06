@@ -106,3 +106,6 @@ venv.bak/
 log
 requirements.txt
 Dockerfile
+
+# models
+models

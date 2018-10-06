@@ -103,7 +103,7 @@ def train(content, step_size, logger, args):
             episode_reward = 0
             
             # Plase add model save code as you like.
-            if i % 10000 == 0:
+            if i % 100000 == 0:
                 bg.save_model()
             
     print("training finished")
