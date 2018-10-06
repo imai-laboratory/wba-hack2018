@@ -206,7 +206,7 @@ class Inspector(object):
     def show_vae_reconstruction_grid(self, vae_data):
         data_len = len(vae_data)
         for i, (key, image) in enumerate(vae_data.items()):
-            image = np.array(image)[0] * 255.0
+            image = np.array(image) * 255.0
             width = image.shape[0]
             image = np.array(image, dtype=np.uint8)
             image = cv2.resize(image, (128, 128))
