@@ -33,7 +33,7 @@ class BG(object):
         # TODO: do we need convs?
         # state_shape = [ppconsts.STATE_SHAPE]  # state_shape = input shape of the network
         # state_shape = (128, 3)
-        state_shape = [128, 3]
+        state_shape = [8, 8, 6]
         num_actions = consts.NUM_ACTIONS
 
         # TODO(->smatsumori): load from saved models
@@ -115,7 +115,8 @@ class BG(object):
         else:
             with self.sess.as_default():
                 # TODO(->smatsumori): check input shape
-                fef_data = np.array(fef_data)[np.newaxis, :, :]
+                # fef_data = np.array(fef_data)[np.newaxis, :, :]
+                fef_data = np.array(fef_data).reshape(64, 6).reshape(1, 8, 8, 6)
                 likelihood_thresholds = (self.agent.act(fef_data, [reward], [done])[0] + 1.0) / 2.0
                 likelihood_thresholds = np.clip(likelihood_thresholds, -1.0, 1.0)
                 self.step += 1
