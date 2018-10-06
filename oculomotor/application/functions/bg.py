@@ -1,9 +1,11 @@
+import os
 import numpy as np
 import tensorflow as tf
 import brica
 from .ppo import constants as ppconsts
 from . import constants as consts
 
+import datetime
 from .ppo.agent import Agent
 from .ppo.network import make_network
 from .ppo.scheduler import LinearScheduler, ConstantScheduler
@@ -13,11 +15,14 @@ This is an example implemention of BG (Basal ganglia) module.
 You can change this as you like.
 """
 
+PATH = 'models'
+
 class BG(object):
-    def __init__(self, skip=False):
+    def __init__(self, model_name, skip=False):
         self.timing = brica.Timing(5, 1, 0)
         self.skip = skip
         self.step = 0
+        self.model_name = None
         if not skip:
             self.__initialize_rl()
         self.last_bg_data = None
@@ -69,8 +74,14 @@ class BG(object):
         config.gpu_options.allow_growth = True
         self.sess = tf.Session(config=config)
         self.sess.__enter__()
+        self.saver = tf.train.Saver()
+        if self.model_name:
+            self.saver.restore(self.sess, os.path.join(PATH, self.model_name))
         self.sess.run(tf.global_variables_initializer())
 
+        save_path = self.saver.save(self.sess, os.path.join(PATH, datetime.datetime.now().strftime('%m%d-%s')+'.ckpt'))
+        print('Model saved in path: %s' % save_path)
+        
     def __call__(self, inputs, update=False):
         # TODO; update params
         # update True when to update parameters
