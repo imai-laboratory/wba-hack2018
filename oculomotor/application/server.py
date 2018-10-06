@@ -37,7 +37,7 @@ contents = [
     RandomDotMotionDiscriminationContent,
 ]
 
-display_size = (128 * 4 + 16, 800)
+display_size = (128 * 4 + 16, 1000)
 
 
 class Runner(object):
@@ -89,11 +89,9 @@ class Runner(object):
 
 runner = Runner()
 
-
 @app.route('/init')
 def init():
     return runner.init()
-
 
 @app.route('/info')
 def info():

@@ -1,7 +1,10 @@
 import brica
 import scipy as sp
 import numpy as np
-from tensorflow import keras as K
+import tensorflow as tf
+from .vae.train import build
+from .vae import constants
+# from tensorflow import keras as K
 
 
 class VC(object):
@@ -10,15 +13,22 @@ class VC(object):
     ARGS:
         skip: skip the feature extraction if enabled
     """
-    def __init__(self, skip=True):
+    def __init__(self, skip=False):
         self.timing = brica.Timing(2, 1, 0)
         if skip:
             self.model = None
         else:
+            print('loading beta VAE')
             # input_shape: (224, 224, 3)
             # self.model = K.applications.vgg16.VGG16()
-            self.model = K.applications.mobilenet.MobileNet()
+            # self.model = K.applications.mobilenet.MobileNet()
+            self.reconstruct, self.generate, _ = build(constants)
+            config = tf.ConfigProto()
+            config.gpu_options.allow_growth = True
+            self.sess = tf.Session(config=config)
+            self.sess.run(tf.global_variables_initializer())
         self.skip = skip
+        self.last_vae_reconstruction = None
 
     def __call__(self, inputs):
         """
@@ -33,19 +43,25 @@ class VC(object):
         # TODO(->smatsumori): add pretrained models
         # todo(->smatsumori): check inputs shape
 
+
         # feature extraction
         if self.skip:
-            processed_image = retina_image
+            processed_images = (retina_image, None)
         else:
+            # resizing image
+            reshape_size = (64, 64, 3)
             reshaped_image = sp.misc.imresize(
-                retina_image, (224, 224, 3), interp='bilinear'
+                retina_image, reshape_size, interp='bilinear'
             )
-            print('reshaped', reshaped_image.shape)
-            # feature_map = self.model.predict(reshaped_image)
-            # print('feature', feature_map)
-            processed_image = retina_image
+
+            # VAE reconstruction
+            with self.sess.as_default():
+                reconstructed_image = self.reconstruct([reshaped_image])[0]
+            processed_images = (retina_image, reconstructed_image)
+            self.last_vae_reconstruction = [reconstructed_image]
 
 
         # Current implementation just passes through input retina image to FEF and PFC.
-        return dict(to_fef=processed_image,
-                    to_pfc=processed_image)
+        # TODO: change pfc fef
+        return dict(to_fef=processed_images,
+                    to_pfc=processed_images)

@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import cv2
-from .constants import *
+from . import constants
 import argparse
 import os
 
