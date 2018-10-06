@@ -70,6 +70,12 @@ class LIP(object):
     def __call__(self, inputs):
         if 'from_retina' not in inputs:
             raise Exception('LIP did not recieve from Retina')
+        elif 'from_vc' not in inputs:
+            raise Exception('LIP did not recieve from VC')
+        
+        # TODO: at first, vc give nonetype
+        #print(type(inputs['from_vc']))
+        #print('retina: {}'.format(type(inputs['from_retina'])))
 
         retina_image = inputs['from_retina'] # (128, 128, 3)
         saliency_map = self._get_saliency_map(retina_image) # (128, 128)

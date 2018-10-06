@@ -97,4 +97,5 @@ class VC(object):
         # Current implementation just passes through input retina image to FEF and PFC.
         # TODO: change pfc fef
         return dict(to_fef=processed_images,
+                    to_lip=processed_images,
                     to_pfc=processed_images)
