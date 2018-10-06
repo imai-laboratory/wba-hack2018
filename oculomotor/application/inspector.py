@@ -207,10 +207,9 @@ class Inspector(object):
         data_len = len(vae_data)
         for i, (key, image) in enumerate(vae_data.items()):
             image = np.array(image)[0] * 255.0
-            width = image[0].shape[0]
+            width = image.shape[0]
             image = np.array(image, dtype=np.uint8)
             image = cv2.resize(image, (128, 128))
-            image = np.transpose(image, [2, 0, 1])
             image = np.ascontiguousarray(image, dtype=np.uint8)
             self.show_image(image, 8+i*width, 700, "vae:" + key)
 
