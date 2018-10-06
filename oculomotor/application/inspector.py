@@ -44,6 +44,7 @@ class Inspector(object):
         self.cb = CB()
 
         self.step = 0
+        self.episode = 0
 
         self.agent = Agent(
             retina=self.retina,
@@ -252,7 +253,12 @@ class Inspector(object):
 
         if done:
             obs = self.env.reset()
-            print("\033[93m episode reward={} \033[0m".format(self.episode_reward))
+            print(
+                "\033[93m {}step, {}episode reward={} \033[0m".format(
+                    self.step, self.episode, self.episode_reward
+                )
+            )
+            self.episode += 1
             self.episode_reward = 0
 
         image = obs['screen']
