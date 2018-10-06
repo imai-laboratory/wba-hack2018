@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 
 import brica
+from .vae.train import build
+from .vae.constants as constants
 
 
 GAUSSIAN_KERNEL_SIZE = (5,5)
@@ -67,12 +69,22 @@ class LIP(object):
         self.last_saliency_map = None
         self.last_optical_flow = None
 
+        self.reconstruct, self.generate, _ = build(constants)
+
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        self.sess = tf.Session(config=config)
+        self.sess.run(tf.global_variables_initializer())
+
     def __call__(self, inputs):
         if 'from_retina' not in inputs:
             raise Exception('LIP did not recieve from Retina')
 
         retina_image = inputs['from_retina'] # (128, 128, 3)
         saliency_map = self._get_saliency_map(retina_image) # (128, 128)
+
+        with self.sess.as_default():
+            reconst = self.reconstruct([retina_image])
 
         use_saliency_flow = False
 
