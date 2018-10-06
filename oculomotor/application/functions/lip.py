@@ -57,9 +57,9 @@ class OpticalFlow(object):
             diff_angle = np.array(angle) - np.array(self.last_angle)
             self.angle_flow = (2 * (1 - np.cos(diff_angle[0])), 2 * (1 - np.cos(diff_angle[1])))
             # (2, 2)
-
-            self.flow[..., 0] = self.flow[..., 0] - self.angle_flow[0]
-            self.flow[..., 1] = self.flow[..., 1] - self.angle_flow[1]
+            
+            self.flow[..., 0] = self.flow[..., 0] - self.angle_flow[0] * 5000 # hyper parameter
+            self.flow[..., 1] = self.flow[..., 1] - self.angle_flow[1] * 5000 # hyper parameter
             
         self.last_gray_image = gray_image
         self.last_angle = angle

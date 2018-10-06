@@ -118,12 +118,18 @@ class Inspector(object):
         y, x = np.mgrid[step // 2:h:step, step // 2:w:step].reshape(
             2, -1).astype(int)
         fx, fy = optical_flow[y, x].T
-        lines = np.vstack([x, y, x + fx, y + fy]).T.reshape(-1, 2, 2)
+        lines = np.vstack([x, y, x + fx * 5, y + fy * 5]).T.reshape(-1, 2, 2)
         lines = np.int32(lines + 0.5)
 
-        cv2.polylines(image, lines, 0, (0, 255, 0))
-        for (x1, y1), (x2, y2) in lines:
-            cv2.circle(image, (x1, y1), 1, (0, 255, 0), -1)
+        for i, ((x1, y1), (x2, y2)) in enumerate(lines):
+            if (not (17 < i < 22)) and (not (25 < i < 30)) and \
+               (not (33 < i < 38)) and (not (41 < i < 46)):
+                continue
+            line = np.vstack([x1, y1, x2, y2]).T.reshape(-1, 2, 2)
+            line = np.int32(line + 0.5)
+             
+            cv2.polylines(image, line, 0, (0, 255, 0))
+        
         self.show_image(image, 128 * 3 + 8, 8, "opt_flow")
 
     def show_map_image(self, map_image):
