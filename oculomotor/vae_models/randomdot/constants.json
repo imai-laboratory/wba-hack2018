@@ -1,0 +1,1 @@
+{"EPOCH": 100, "LATENT_SIZE": 8, "KEEP_PROB": 1.0, "FCS": [256], "ACTIVATION": "relu", "BETA": 10.0, "IMAGE_SIZE": [64, 64, 3], "BATCH_SIZE": 128, "LR": 0.0001, "CONVS": [[3, 32, 4, 2], [32, 32, 4, 2], [32, 64, 4, 2], [64, 64, 4, 2]]}
