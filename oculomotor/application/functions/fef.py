@@ -99,9 +99,9 @@ class CursorAccumulator(ActionAccumulator):
         # add
         red_min = np.array([0, 0, 0], np.uint8)
         red_max = np.array([255, 100, 100], np.uint8)
-        region_image_red = cv2.inRange(img, red_min, red_max)
+        region_image_red = cv2.inRange(region_image, red_min, red_max)
         region_image_red = cv2.cvtColor(region_image_red, cv2.COLOR_GRAY2RGB)
-        cursor_template_red = cv2.inRange(img, red_min, red_max)
+        cursor_template_red = cv2.inRange(self.cursor_template, red_min, red_max)
         cursor_template_red = cv2.cvtColor(cursor_template_red, cv2.COLOR_GRAY2RGB)
 
         # Calculate template matching
