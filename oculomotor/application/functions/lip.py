@@ -31,6 +31,9 @@ class OpticalFlow(object):
         if image is None:
             return
 
+        image = image[0]
+        angle = image[1]
+        
         if not is_saliency_map:
             # Input is retina image
             gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
@@ -118,7 +121,7 @@ class LIP(object):
         resize_shape = (64, 64) # (h,w)
 
         # Size argument of resize() is (w,h) while image shape is (h,w,c)
-        image_resized = cv2.resize(image, resize_shape[1::-1])
+        image_resized = cv2.resize(image[0], resize_shape[1::-1])
         # (64,64,3)
 
         saliency = np.zeros_like(image_resized, dtype=np.float32)
@@ -145,5 +148,5 @@ class LIP(object):
         saliency = saliency / np.max(saliency)
 
         # Resize to original size
-        saliency = cv2.resize(saliency, image.shape[1::-1])
+        saliency = cv2.resize(saliency, image[0].shape[1::-1])
         return saliency
