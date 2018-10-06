@@ -205,13 +205,19 @@ class Inspector(object):
 
     def show_vae_reconstruction_grid(self, vae_data):
         data_len = len(vae_data)
+        width = 128.0
+        bottom = 650
+        left = 8 - width
         for i, (key, image) in enumerate(vae_data.items()):
             image = np.array(image) * 255.0
-            width = 128.0
             image = np.array(image, dtype=np.uint8)
             image = cv2.resize(image, (128, 128))
             image = np.ascontiguousarray(image, dtype=np.uint8)
-            self.show_image(image, 8+i*width, 700, "vae:" + key)
+            left += width
+            if i == 4:
+                left = 8
+                bottom = 800
+            self.show_image(image, left, bottom, "vae:" + key)
 
     def show_grid(self, data, offset, grid_division, grid_width, left, top,
                   label):
