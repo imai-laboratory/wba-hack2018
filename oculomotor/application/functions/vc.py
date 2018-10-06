@@ -32,7 +32,10 @@ class VC(object):
                 reconstruct, generate, _ = build(constants, name)
                 self.reconsts[name] = reconstruct
                 self.generates[name] = generate
-            config = tf.ConfigProto()
+
+            config = tf.ConfigProto(
+                device_count={'GPU': 1}  # NO GPU
+            )
             config.gpu_options.allow_growth = True
 
             self.sess = tf.Session(config=config)

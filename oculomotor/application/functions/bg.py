@@ -70,7 +70,9 @@ class BG(object):
             upper_bound=1.0
         )
 
-        config = tf.ConfigProto()
+        config = tf.ConfigProto(
+            device_count={'GPU': 2}  # NO GPU
+        )
         config.gpu_options.allow_growth = True
         self.sess = tf.Session(config=config)
         self.sess.__enter__()

@@ -96,9 +96,19 @@ class CursorAccumulator(ActionAccumulator):
         region_image = retina_image[self.pixel_y:self.pixel_y+GRID_WIDTH,
                                     self.pixel_x:self.pixel_x+GRID_WIDTH, :]
 
+        region_image = np.array(region_image)
+        region_image = region_image.reshape((-1, 3))
+        region_image = np.mean(region_image, axis=0)
+        match = np.dot(region_image, np.array([0, 255, 0])) // 65000
+
+        '''
         # add
         red_min = np.array([0, 0, 0], np.uint8)
         red_max = np.array([255, 100, 100], np.uint8)
+
+        red_min = np.array([200, 0, 0], np.uint8)
+        red_max = np.array([255, 0, 0], np.uint8)
+
         region_image_red = cv2.inRange(region_image, red_min, red_max)
         region_image_red = cv2.cvtColor(region_image_red, cv2.COLOR_GRAY2RGB)
         cursor_template_red = cv2.inRange(self.cursor_template, red_min, red_max)
@@ -107,6 +117,8 @@ class CursorAccumulator(ActionAccumulator):
         # Calculate template matching
         #match = cv2.matchTemplate(region_image, self.cursor_template, cv2.TM_CCOEFF_NORMED)
         match = cv2.matchTemplate(region_image_red, cursor_template_red, cv2.TM_CCOEFF_NORMED)
+        '''
+
         # Find the maximum match value
         match_rate = np.max(match)
         self.accumulate(match_rate * CURSOR_MATCH_COEFF)
