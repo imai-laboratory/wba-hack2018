@@ -73,24 +73,24 @@ def main():
         count += 1
 
         # visualize
-        if count % 100 == 0:
-            test_images = next(test_iterator)
-            test_images = np.array(test_images, dtype=np.float32) / 255.0
-            # reconstruction
-            reconst, latent = reconstruct(test_images)
+    #    if count % 100 == 0:
+    #        test_images = next(test_iterator)
+    #        test_images = np.array(test_images, dtype=np.float32) / 255.0
+    #        # reconstruction
+    #        reconst, latent = reconstruct(test_images)
 
-            # show reconstructed images
-            reconst_images = np.array(reconst * 255, dtype=np.uint8)
-            reconst_tiled_images = tile_images(reconst_images)
-            cv2.imshow('test', reconst_tiled_images)
+    #        # show reconstructed images
+    #        reconst_images = np.array(reconst * 255, dtype=np.uint8)
+    #        reconst_tiled_images = tile_images(reconst_images)
+    ##        cv2.imshow('test', reconst_tiled_images)
 
-            # show original images
-            original_images = np.array(test_images * 255, dtype=np.uint8)
-            original_tiled_images = tile_images(original_images)
-            cv2.imshow('original', original_tiled_images)
+    #        # show original images
+    #        original_images = np.array(test_images * 255, dtype=np.uint8)
+    #        original_tiled_images = tile_images(original_images)
+    #        cv2.imshow('original', original_tiled_images)
 
-            if cv2.waitKey(10) > 0:
-                pass
+    #        if cv2.waitKey(10) > 0:
+    #            pass
 
     # save model
     print('saving model...')
