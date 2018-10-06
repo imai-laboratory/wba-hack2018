@@ -114,7 +114,8 @@ class BG(object):
             with self.sess.as_default():
                 # TODO(->smatsumori): check input shape
                 fef_data = np.array(fef_data)[np.newaxis, :, :]
-                likelihood_thresholds = self.agent.act(fef_data, [reward], [done])[0]
+                likelihood_thresholds = (self.agent.act(fef_data, [reward], [done])[0] + 1.0) / 2.0
+                likelihood_thresholds = np.clip(likelihood_thresholds, -1.0, 1.0)
                 self.step += 1
                 self.last_bg_data = likelihood_thresholds
 
