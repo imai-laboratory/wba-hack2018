@@ -86,17 +86,18 @@ class VC(object):
             # resizing image
             reshape_size = (64, 64, 3)
             reshaped_image = sp.misc.imresize(
-                retina_image, reshape_size, interp='bilinear'
-            )
+                retina_image, reshape_size, interp='bilinear')
 
             # VAE reconstruction
             input_image = np.array(reshaped_image, dtype=np.float32) / 255.0
             with self.sess.as_default():
                 recont_images = self.reconst([input_image])
                 images = OrderedDict()
+                pixel_errors = OrderedDict()
                 for image, name in zip(recont_images, model_paths.keys()):
                     images[name] = image[0]
-            processed_images = (retina_image, images)
+                    pixel_errors[name] = (image[0] - input_image) ** 2
+            processed_images = (retina_image, pixel_errors)
             self.last_vae_reconstruction = images
 
         # Current implementation just passes through input retina image to FEF and PFC.

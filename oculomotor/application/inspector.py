@@ -219,6 +219,9 @@ class Inspector(object):
                 bottom = 800
             self.show_image(image, left, bottom, "vae:" + key)
 
+    def show_current_task(self, task):
+        self.draw_text("PFC task: {}".format(task), 24, 950)
+
     def show_grid(self, data, offset, grid_division, grid_width, left, top,
                   label):
         index = 0
@@ -280,6 +283,9 @@ class Inspector(object):
 
         if self.vc.last_vae_reconstruction is not None:
             self.show_vae_reconstruction_grid(self.vc.last_vae_reconstruction)
+        
+        if self.pfc.last_current_task is not None:
+            self.show_current_task(self.pfc.last_current_task)
 
         self.last_image = image
         self.last_angle = angle

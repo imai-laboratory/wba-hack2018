@@ -99,7 +99,7 @@ class BG(object):
 
         fef_data = inputs['from_fef']
         pfc_data = inputs['from_pfc'][0]
-        pfc_data_findcursor = inputs['from_pfc'][1]
+        pfc_data_findcursor, _, current_task = inputs['from_pfc']
         #if 0 < pfc_data:
         #    print("\033 internal reward!! \033[0m")
         #reward, done = inputs['from_environment'][0] + pfc_data, inputs['from_environment'][1]

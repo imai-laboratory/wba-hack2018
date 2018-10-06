@@ -30,7 +30,7 @@ app.secret_key = 'oculomotor'
 app.jinja_loader = FileSystemLoader(os.getcwd() + '/templates')
 
 
-display_size = (128 * 4 + 16, 1000)
+display_size = (128 * 4 + 16, 1500)
 
 # parser
 parser = argparse.ArgumentParser()

@@ -4,6 +4,7 @@ import numpy as np
 
 import brica
 from .utils import load_image
+from .vc import model_paths
 
 """
 This is a sample implemention of PFC (Prefrontal cortex) module.
@@ -41,16 +42,33 @@ class CursorFindAccumulator(object):
         # Decay likelihood
         self.likelihood *= self.decay_rate
 
+class Accumulator:
+    def __init__(self, decay_rate=0.9):
+        self.decay_rate = decay_rate
+        self.value = 0.0
 
+    def accumulate(self, value):
+        self.value *= self.decay_rate
+        self.value += value
+
+    def reset(self):
+        self.value = 0.0
+
+    def get_value(self):
+        return self.value
 
 class PFC(object):
     def __init__(self):
         self.timing = brica.Timing(3, 1, 0)
 
         self.cursor_find_accmulator = CursorFindAccumulator()
+        self.vae_error_accumulators = {}
+        for name in model_paths.keys():
+            self.vae_error_accumulators[name]= Accumulator()
 
         self.phase = Phase.INIT
         self.prev_phase = self.phase
+        self.last_current_task = None
 
 
     def __call__(self, inputs):
@@ -64,7 +82,7 @@ class PFC(object):
             raise Exception('PFC did not recieve from HP')
 
         # Image from Visual cortex module.
-        retina_image, reconstructed_image = inputs['from_vc']
+        retina_image, pixel_errors = inputs['from_vc']
         # Allocentrix map image from hippocampal formatin module.
         map_image = inputs['from_hp']
 
@@ -90,6 +108,13 @@ class PFC(object):
             if self.cursor_find_accmulator.likelihood > 0.6:
                 self.phase = Phase.START
 
+        # accumulate reconstruction error
+        errors = []
+        for name, pixel_error in pixel_errors.items():
+            errors.append(pixel_error.mean(-1).mean(-1).mean(-1))
+        current_task = list(pixel_errors.keys())[np.argmin(errors)]
+        self.last_current_task = current_task
+
         # TODO: update fef_message signal
         if self.phase == Phase.INIT or self.phase == Phase.START:
             # TODO: 領野をまたいだ共通phaseをどう定義するか？
@@ -99,4 +124,4 @@ class PFC(object):
             fef_message = 1
 
         return dict(to_fef=fef_message,
-                    to_bg=(bg_message, bg_findcursor))
+                    to_bg=(bg_message, bg_findcursor, current_task))
