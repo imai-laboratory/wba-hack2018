@@ -1,5 +1,5 @@
 STATE_WINDOW = 1
-CONVS = []
+CONVS = [[8, 3, 1], [16, 3, 1]]
 FCS = [64, 64]
 PADDING = 'VALID'
 LSTM_UNIT = 64
