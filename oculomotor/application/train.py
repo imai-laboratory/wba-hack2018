@@ -95,8 +95,8 @@ def train(content, step_size, logger, args):
         if done:
             obs = env.reset()
             print(
-                "\033[93m {} episode reward={} \033[0m".format(
-                    episode_count, episode_reward
+                "\033[93m {} step, {} episode reward={} \033[0m".format(
+                    i, episode_count, episode_reward
                 )
             )
 
