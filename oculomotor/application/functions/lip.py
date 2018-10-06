@@ -12,6 +12,7 @@ class OpticalFlow(object):
         Input image can be retina image or saliency map. 
         """
         self.last_gray_image = None
+        self.last_angle = None
         self.hist_32 = np.zeros((128, 128), np.float32)
 
         self.inst = cv2.optflow.createOptFlow_DIS(
@@ -26,13 +27,13 @@ class OpticalFlow(object):
         flow[:,:,1] += np.arange(h)[:,np.newaxis]
         res = cv2.remap(img, flow, None, cv2.INTER_LINEAR)
         return res
-
+            
     def process(self, image, is_saliency_map=False):
         if image is None:
             return
 
-        image = image[0]
         angle = image[1]
+        image = image[0]
         
         if not is_saliency_map:
             # Input is retina image
@@ -51,7 +52,18 @@ class OpticalFlow(object):
                                            gray_image,
                                            None)
             # (128, 128, 2)
+
+        if self.last_angle is not None:
+            diff_angle = np.array(angle) - np.array(self.last_angle)
+            self.angle_flow = (2 * (1 - np.cos(diff_angle[0])), 2 * (1 - np.cos(diff_angle[1])))
+            # (2, 2)
+
+            self.flow[..., 0] = self.flow[..., 0] - self.angle_flow[0]
+            self.flow[..., 1] = self.flow[..., 1] - self.angle_flow[1]
+            
         self.last_gray_image = gray_image
+        self.last_angle = angle
+        
         return self.flow
 
 

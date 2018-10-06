@@ -38,7 +38,7 @@ def get_content(content_type):
     return content
 
 
-def train(content, step_size, logger, args):
+def train(content, step_size, logger, model_name):
     retina = Retina()
     lip = LIP()
     vc = VC()
@@ -142,7 +142,7 @@ def main():
     logger = Logger(log_path)
 
     # Start training
-    train(content, step_size, logger, args)
+    train(content, step_size, logger, model_name)
 
 
 if __name__ == '__main__':
