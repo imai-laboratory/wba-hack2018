@@ -81,11 +81,11 @@ class BG(object):
         self.saver = tf.train.Saver()
         if self.model_name:
             if not self.model_name.endswith('.ckpt'):
-                model_name += '.ckpt'
+                self.model_name += '.ckpt'
             self.saver.restore(self.sess, os.path.join(PATH, self.model_name))
         self.sess.run(tf.global_variables_initializer())
 
-        
+
     def __call__(self, inputs, update=False):
         # TODO; update params
         # update True when to update parameters
