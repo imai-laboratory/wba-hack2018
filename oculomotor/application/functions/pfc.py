@@ -64,7 +64,7 @@ class PFC(object):
             raise Exception('PFC did not recieve from HP')
 
         # Image from Visual cortex module.
-        retina_image = inputs['from_vc']
+        retina_image, reconstructed_image = inputs['from_vc']
         # Allocentrix map image from hippocampal formatin module.
         map_image = inputs['from_hp']
 
