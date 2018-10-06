@@ -109,3 +109,5 @@ data/__pycache__/
 
 # vscode
 .vscode/
+
+# oculomotor/models/*

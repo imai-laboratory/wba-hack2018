@@ -79,8 +79,6 @@ class BG(object):
             self.saver.restore(self.sess, os.path.join(PATH, self.model_name))
         self.sess.run(tf.global_variables_initializer())
 
-        save_path = self.saver.save(self.sess, os.path.join(PATH, datetime.datetime.now().strftime('%m%d-%s')+'.ckpt'))
-        print('Model saved in path: %s' % save_path)
         
     def __call__(self, inputs, update=False):
         # TODO; update params
@@ -117,3 +115,6 @@ class BG(object):
         return dict(to_pfc=None,
                     to_fef=None,
                     to_sc=likelihood_thresholds)
+
+    def save_model(self):
+        self.saver.save(self.sess, os.path.join(PATH, datetime.datetime.now().strftime('%m%d-%s')+'.ckpt'))
