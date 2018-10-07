@@ -14,9 +14,11 @@ You can change this as you like.
 
 GRID_DIVISION = 8
 GRID_WIDTH = 128 // GRID_DIVISION
+GRID_OPTICAL_WIDTH = 64 // 4
 
-CURSOR_MATCH_COEFF = 0.3
 SALIENCY_COEFF = 0.3
+OPTICALFLOW_COEFF = 0.3
+CURSOR_MATCH_COEFF = 0.3
 
 
 class ActionAccumulator(object):
@@ -66,7 +68,33 @@ class ActionAccumulator(object):
     def output(self):
         return [self.likelihood, self.ex, self.ey]
 
+    
+class OpticalXflowAccumulator(ActionAccumulator):
+    def __init__(self, pixel_x, pixel_y, ex, ey):
+        super(OpticalXflowAccumulator, self).__init__(ex, ey, decay_rate=0.9)
+        self.pixel_x = pixel_x
+        self.pixel_y = pixel_y
 
+    def process(self, opticalflow_map):
+        region_opticalflow = opticalflow_map
+        average_opticalflow = np.mean(region_opticalflow)
+        self.accumulate(average_opticalflow * OPTICALFLOW_COEFF)
+        self.expose()
+
+
+class OpticalYflowAccumulator(ActionAccumulator):
+    def __init__(self, pixel_x, pixel_y, ex, ey):
+        super(OpticalYflowAccumulator, self).__init__(ex, ey, decay_rate=0.9)
+        self.pixel_x = pixel_x
+        self.pixel_y = pixel_y
+
+    def process(self, opticalflow_map):
+        region_opticalflow = opticalflow_map
+        average_opticalflow = np.mean(region_opticalflow)
+        self.accumulate(average_opticalflow * OPTICALFLOW_COEFF)
+        self.expose()
+
+        
 class SaliencyAccumulator(ActionAccumulator):
     def __init__(self, pixel_x, pixel_y, ex, ey):
         super(SaliencyAccumulator, self).__init__(ex, ey, decay_rate=0.85)
@@ -130,10 +158,12 @@ class CursorAccumulator(ActionAccumulator):
         self.accumulate(match_rate * CURSOR_MATCH_COEFF)
         self.expose()
 
-
+        
 class FEF(object):
     def __init__(self):
         self.timing = brica.Timing(4, 1, 0)
+        self.opticalxflow_accumulators = []
+        self.opticalyflow_accumulators = []
         self.saliency_accumulators = []
         self.error_accumulators = []
         self.cursor_accumulators = []
@@ -154,14 +184,20 @@ class FEF(object):
                 saliency_accumulator = SaliencyAccumulator(pixel_x, pixel_y, ex, ey)
                 self.saliency_accumulators.append(saliency_accumulator)
 
+                cursor_accumulator = CursorAccumulator(pixel_x, pixel_y, ex, ey, cursor_template)
+                
                 # vae error accumulator
                 error_accumulator = SaliencyAccumulator(pixel_x, pixel_y, ex, ey)
                 self.error_accumulators.append(error_accumulator)
 
-                # TODO: want to remove this!
-                cursor_accumulator = CursorAccumulator(pixel_x, pixel_y, ex, ey,
-                                                       cursor_template)
                 self.cursor_accumulators.append(cursor_accumulator)
+
+        for _ in range(4 * 4):                
+            opticalxflow_accumulator = OpticalXflowAccumulator(0, 0, 0, 0)
+            self.opticalxflow_accumulators.append(opticalxflow_accumulator)
+                
+            opticalyflow_accumulator = OpticalYflowAccumulator(0, 0, 0, 0)
+            self.opticalyflow_accumulators.append(opticalyflow_accumulator)
 
         # TODO: check what means accumulator connection
         # Accmulator connection sample
@@ -179,7 +215,7 @@ class FEF(object):
 
         # task (string)
         phase, task = inputs['from_pfc']
-        saliency_map, optical_flow = inputs['from_lip']
+        saliency_map, opticalxflow, opticalyflow = inputs['from_lip']
         # latents.values().shape: (6, 8)
         retina_image, pixel_errors, top_errors, dc_latents = inputs['from_vc']
 
@@ -194,24 +230,38 @@ class FEF(object):
                 saliency_accumulator.process(saliency_map)
             for error_accumulator in self.error_accumulators:
                 # accumulate current task error
-                error_accumulator.process(top_errors[task] * 10.0)
+                error_accumulator.process(top_errors[task])
 
+            for opticalxflow_accumulator in self.opticalxflow_accumulators:
+                opticalxflow_accumulator.process(opticalxflow)
+                
+            for opticalyflow_accumulator in self.opticalyflow_accumulators:
+                opticalyflow_accumulator.process(opticalyflow)
+                
         # select latents according to tasks
         # to_bg_latent.shape: (1, 8)
         to_bg_latent = dc_latents[task]
-
+                
         # discount accumulator
         # TODO: discount after collecting outputs?
         for saliency_accumulator in self.saliency_accumulators:
             saliency_accumulator.post_process()
         for cursor_accumulator in self.cursor_accumulators:
             cursor_accumulator.post_process()
+        for opticalxflow_accumulator in self.opticalxflow_accumulators:
+            opticalxflow_accumulator.post_process()
+        for opticalyflow_accumulator in self.opticalyflow_accumulators:
+            opticalyflow_accumulator.post_process()
         for error_accumulator in self.error_accumulators:
             error_accumulator.post_process()
 
         # collect all outputs (nx64, 3) -> (n, 64, 3) -> (n, 8, 8, 3)?
         output = self._collect_output()
 
+        # opticalxflow (8, 8, 1), opticalyflow (8, 8, 1)
+        output.append(opticalxflow)
+        output.append(opticalyflow)
+        
         # TODO: pass feature extracted to bg?
         # NOTE: do not change the output size of to_sc (=action space of BG)
         return dict(to_pfc=None,
@@ -225,6 +275,13 @@ class FEF(object):
             output.append(saliency_accumulator.output)
         for cursor_accumulator in self.cursor_accumulators:
             output.append(cursor_accumulator.output)
+            
+#        for opticalxflow_accumulator in self.opticalxflow_accumulators:
+#            output.append(opticalxflow_accumulator.output)
+#        for opticalyflow_accumulator in self.opticalyflow_accumulators:
+#            output.append(opticalyflow_accumulator.output)
+
         for error_accumulator in self.error_accumulators:
             output.append(error_accumulator.output)
+
         return np.array(output, dtype=np.float32)
