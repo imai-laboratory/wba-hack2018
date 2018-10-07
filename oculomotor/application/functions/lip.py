@@ -53,13 +53,13 @@ class OpticalFlow(object):
                                            None)
             # (128, 128, 2)
 
+        # calculate angle flow made by egocentric movement
         if self.last_angle is not None:
             diff_angle = np.array(angle) - np.array(self.last_angle)
             self.angle_flow = (2 * (1 - np.cos(diff_angle[0])), 2 * (1 - np.cos(diff_angle[1])))
-            # (2, 2)
+            # (2, )
 
-            # print(self.flow, self.angle_flow)
-            
+            # cancel egocentric movement
             self.flow[..., 0] = self.flow[..., 0] - self.angle_flow[0] * 1000 # hyper parameter
             self.flow[..., 1] = self.flow[..., 1] - self.angle_flow[1] * 500 # hyper parameter
                 
