@@ -96,7 +96,7 @@ class BG(object):
 
         # fef_latent_data.shape: (1, 8)
         fef_data, fef_latent_data = inputs['from_fef']
-        pfc_data_findcursor, _, current_task = inputs['from_pfc']
+        pfc_data_findcursor, current_task = inputs['from_pfc']
         hp_data = inputs['from_hp']
 
         # from_hp.shape(7, 6, 8)
@@ -105,38 +105,45 @@ class BG(object):
         reward = inputs['from_environment'][0]
         done = inputs['from_environment'][1]
 
-        with self.sess.as_default():
+        # skip ppo when finding cursor
+        if pfc_data_findcursor == 1:
+            # action space will be fixed
             saliency_maps = np.array(fef_data)
-            old_saliency = saliency_maps[0].reshape((1, 8, 8, 1))
+            accmulator_size = saliency_maps.size
+            # Set threshold as 0.1 (as dummy test)
+            likelihood_thresholds = np.ones(
+                [accmulator_size], dtype=np.float32) * 0.3
+        else:
+            with self.sess.as_default():
+                saliency_maps = np.array(fef_data)
+                old_saliency = saliency_maps[0].reshape((1, 8, 8, 1))
 
-            # skip cursor saliency (no need to feed into ppo)
-            error_saliency = saliency_maps[2].reshape((1, 8, 8, 1))
+                # skip cursor saliency (no need to feed into ppo)
+                error_saliency = saliency_maps[2].reshape((1, 8, 8, 1))
 
-            # (2, 8, 8, 1)
-            ppo_saliency_data = np.vstack([old_saliency, error_saliency])
+                # (2, 8, 8, 1)
+                ppo_saliency_data = np.vstack([old_saliency, error_saliency])
 
-            # fef_latent_data.shape(1, 8) 
-            # hp_data_latents_selected.shape (7, 8)
-            # ppo_latent_data.shape (1, 8, 8, 1)
-            ppo_latent_data = np.vstack(
-                (
-                    np.array(fef_latent_data)[np.newaxis, :],
-                    np.array(hp_data_latents_selected)
-                )
-            ).reshape((1, 8, 8, 1))
+                # fef_latent_data.shape(1, 8) 
+                # hp_data_latents_selected.shape (7, 8)
+                # ppo_latent_data.shape (1, 8, 8, 1)
+                ppo_latent_data = np.vstack(
+                    (
+                        np.array(fef_latent_data)[np.newaxis, :],
+                        np.array(hp_data_latents_selected)
+                    )
+                ).reshape((1, 8, 8, 1))
 
-            # (3, 8, 8, 1)
-            ppo_input = np.vstack((ppo_saliency_data, ppo_latent_data))
-            # ppo_input.shape(3, 8, 8, 1) -> (1, 8, 8, 3)
-            ppo_input = np.transpose(ppo_input, [3, 1, 2, 0])
+                # (3, 8, 8, 1)
+                ppo_input = np.vstack((ppo_saliency_data, ppo_latent_data))
+                # ppo_input.shape(3, 8, 8, 1) -> (1, 8, 8, 3)
+                ppo_input = np.transpose(ppo_input, [3, 1, 2, 0])
 
-            action = self.agent.act(ppo_input, [reward], [done])[0]
-            # normalize thresholds between 0.0 and 1.0
-            likelihood_thresholds = (action + 1.0) / 2.0
-            likelihood_thresholds = np.clip(
-                likelihood_thresholds, 0.0, 1.0)
-            self.step += 1
-            self.last_bg_data = likelihood_thresholds
+                action = self.agent.act(ppo_input, [reward], [done])[0]
+                # normalize thresholds between 0.0 and 1.0
+                likelihood_thresholds = np.clip((action + 1.0) / 2.0, 0.0, 1.0)
+                self.step += 1
+                self.last_bg_data = likelihood_thresholds
 
         return dict(to_pfc=None,
                     to_fef=None,
