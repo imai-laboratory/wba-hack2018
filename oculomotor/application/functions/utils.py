@@ -1,5 +1,6 @@
 import os
 import cv2
+import tensorflow as tf
 import numpy as np
 
 def load_image(file_path):
@@ -23,3 +24,13 @@ def softmax(values, temp=0.1):
     values /= temp
     e_x = np.exp(values - np.max(values))
     return e_x / e_x.sum(axis=0)
+
+# create varible list for saver while replacing top
+# level namespace with specific name
+def create_variable_saver(variables, from_name, to_name):
+    var_list = {}
+    for var in variables:
+        key = var.name
+        # -2 is for ':0'
+        var_list[key.replace(from_name, to_name)[:-2]] = var
+    return tf.train.Saver(var_list)
