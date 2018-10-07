@@ -6,13 +6,9 @@ import tensorflow as tf
 from .vae.train import build
 from .vae import constants
 from .constants import MODEL_PATHS
+from .utils import softmax
 from collections import OrderedDict
 # from tensorflow import keras as K
-
-def softmax(values, temp=0.1):
-    values /= temp
-    e_x = np.exp(values - np.max(values))
-    return e_x / e_x.sum(axis=0)
 
 
 class VC(object):
