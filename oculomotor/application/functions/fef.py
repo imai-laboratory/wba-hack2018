@@ -17,7 +17,6 @@ GRID_WIDTH = 128 // GRID_DIVISION
 GRID_OPTICAL_WIDTH = 64 // 4
 
 SALIENCY_COEFF = 0.3
-OPTICALFLOW_COEFF = 0.3
 CURSOR_MATCH_COEFF = 1.0
 
 
@@ -68,33 +67,7 @@ class ActionAccumulator(object):
     def output(self):
         return [self.likelihood, self.ex, self.ey]
 
-    
-class OpticalXflowAccumulator(ActionAccumulator):
-    def __init__(self, pixel_x, pixel_y, ex, ey):
-        super(OpticalXflowAccumulator, self).__init__(ex, ey, decay_rate=0.9)
-        self.pixel_x = pixel_x
-        self.pixel_y = pixel_y
-
-    def process(self, opticalflow_map):
-        region_opticalflow = opticalflow_map
-        average_opticalflow = np.mean(region_opticalflow)
-        self.accumulate(average_opticalflow * OPTICALFLOW_COEFF)
-        self.expose()
-
-
-class OpticalYflowAccumulator(ActionAccumulator):
-    def __init__(self, pixel_x, pixel_y, ex, ey):
-        super(OpticalYflowAccumulator, self).__init__(ex, ey, decay_rate=0.9)
-        self.pixel_x = pixel_x
-        self.pixel_y = pixel_y
-
-    def process(self, opticalflow_map):
-        region_opticalflow = opticalflow_map
-        average_opticalflow = np.mean(region_opticalflow)
-        self.accumulate(average_opticalflow * OPTICALFLOW_COEFF)
-        self.expose()
-
-        
+            
 class SaliencyAccumulator(ActionAccumulator):
     def __init__(self, pixel_x, pixel_y, ex, ey):
         super(SaliencyAccumulator, self).__init__(ex, ey, decay_rate=0.85)
@@ -162,8 +135,6 @@ class BackgroundAccumulator(ActionAccumulator):
 class FEF(object):
     def __init__(self):
         self.timing = brica.Timing(4, 1, 0)
-        self.opticalxflow_accumulators = []
-        self.opticalyflow_accumulators = []
         self.saliency_accumulators = []
         self.error_accumulators = []
         self.cursor_accumulators = []
@@ -197,13 +168,6 @@ class FEF(object):
                 background_accumulator = BackgroundAccumulator(pixel_x, pixel_y, ex, ey)
                 self.background_accumulators.append(background_accumulator)
 
-        for _ in range(4 * 4):                
-            opticalxflow_accumulator = OpticalXflowAccumulator(0, 0, 0, 0)
-            self.opticalxflow_accumulators.append(opticalxflow_accumulator)
-                
-            opticalyflow_accumulator = OpticalYflowAccumulator(0, 0, 0, 0)
-            self.opticalyflow_accumulators.append(opticalyflow_accumulator)
-
         # TODO: check what means accumulator connection
         # Accmulator connection sample
         # self.saliency_accumulators[0].connect_to(self.saliency_accumulators[1])
@@ -227,9 +191,62 @@ class FEF(object):
         opticalxflow = optical_flow[32:97,32:97, 0]
         opticalyflow = optical_flow[32:97,32:97, 1]
 
-        opticalxflow = cv2.resize(opticalxflow, (8, 8))
-        opticalyflow = cv2.resize(opticalyflow, (8, 8))
+        rx = opticalxflow.reshape(-1)
+        ry = opticalyflow.reshape(-1)        
+
+        angle = 0
+        for i, (x, y) in enumerate(zip(rx[1:], ry[1:])):
+            if i == 1:
+                angle = calc_angle(x, y)
+            else:
+                angle_ = calc_angle(x, y)
+                angle = np.max([angle, angle_]) - (np.abs(angle - angle_) / 2)
+
+        rad = np.array(range(0, 360, 45))
+        ind = np.argmax(-np.abs(rad - angle))
+
+        a0 = np.zeros([8, 8])
+        a0[3:5, 6:8] = 1
         
+        a1 = np.zeros([8, 8])
+        a1[0:2, 6:8] = 1
+
+        a2 = np.zeros([8, 8])
+        a2[0:2, 3:5] = 1
+
+        a3 = np.zeros([8, 8])
+        a3[0:2, 0:2] = 1
+        
+        a4 = np.zeros([8, 8])
+        a4[3:5, 0:2] = 1
+
+        a5 = np.zeros([8, 8])
+        a5[6:8, 0:2] = 1
+
+        a6 = np.zeros([8, 8])
+        a6[6:8, 3:5] = 1
+        
+        a7 = np.zeros([8, 8])
+        a7[6:8, 6:8] = 1
+
+        a = [a0, a1, a2, a3, a4, a5, a6, a7]
+        arrow = a[ind]
+
+        ax = np.zeros([8, 8])
+        ay = np.zeros([8, 8])
+        for ix in range(GRID_DIVISION):
+            pixel_x = GRID_WIDTH * ix
+            cx = 2.0 / GRID_DIVISION * (ix + 0.5) - 1.0
+            for iy in range(GRID_DIVISION):
+                pixel_y = GRID_WIDTH * iy
+                cy = 2.0 / GRID_DIVISION * (iy + 0.5) - 1.0
+                
+                ax[ix, iy] = -cx
+                ay[ix, iy] = -cy
+
+        arrow_output = np.concatenate([arrow, ax], axis=1)
+        arrow_output = np.concatenate([arrow_output, ay], axis=1)
+                
         # TODO: 領野をまたいだ共通phaseをどう定義するか？
         # Update accumulator
         # phase == 0 finding cursor
@@ -240,16 +257,11 @@ class FEF(object):
             for saliency_accumulator in self.saliency_accumulators:
                 # decrease basic saliency to prioritize vae saliency
                 saliency_accumulator.process(saliency_map / 2.0)
+
             for error_accumulator in self.error_accumulators:
                 # accumulate current task error
                 error_accumulator.process(top_errors[task] * 5.0)
-
-            for opticalxflow_accumulator in self.opticalxflow_accumulators:
-                opticalxflow_accumulator.process(opticalxflow)
                 
-            for opticalyflow_accumulator in self.opticalyflow_accumulators:
-                opticalyflow_accumulator.process(opticalyflow)
-
             for background_accumulator in self.background_accumulators:
                 background_accumulator.process(retina_image)
                 
@@ -261,14 +273,13 @@ class FEF(object):
         # TODO: discount after collecting outputs?
         for saliency_accumulator in self.saliency_accumulators:
             saliency_accumulator.post_process()
+
         for cursor_accumulator in self.cursor_accumulators:
             cursor_accumulator.post_process()
-        for opticalxflow_accumulator in self.opticalxflow_accumulators:
-            opticalxflow_accumulator.post_process()
-        for opticalyflow_accumulator in self.opticalyflow_accumulators:
-            opticalyflow_accumulator.post_process()
+       
         for error_accumulator in self.error_accumulators:
             error_accumulator.post_process()
+
         for background_accumulator in self.background_accumulators:
             background_accumulator.post_process()
 
@@ -277,11 +288,6 @@ class FEF(object):
         output = self._collect_output()
         reshaped_output = np.array(output).reshape(
             3, 64, 3)[:, :, 0].reshape(3, 8, 8).tolist()
-
-        # opticalxflow (8, 8, 1), opticalyflow (8, 8, 1)
-        # output.append(opticalxflow)
-        # output.append(opticalyflow)
-        # output is not list
 
         # TODO: change shape output
 #        output.append(np.expand_dims(opticalxflow.reshape(-1), axis=1))
@@ -297,13 +303,10 @@ class FEF(object):
         output = []
         for saliency_accumulator in self.saliency_accumulators:
             output.append(saliency_accumulator.output)
+
         for cursor_accumulator in self.cursor_accumulators:
             output.append(cursor_accumulator.output)
 
-#        for opticalxflow_accumulator in self.opticalxflow_accumulators:
-#            output.append(opticalxflow_accumulator.output)
-#        for opticalyflow_accumulator in self.opticalyflow_accumulators:
-#            output.append(opticalyflow_accumulator.output)
  
         for error_accumulator in self.error_accumulators:
             output.append(error_accumulator.output)
@@ -320,3 +323,14 @@ class FEF(object):
         output[64:128][:,0] = np.clip(output[64:128][:,0], 0, 1)
 
         return output
+
+
+def calc_angle(x, y):
+    u = np.array([1, 0])
+    v = np.array([x, y])
+    i = np.inner(u, v)
+    n = np.linalg.norm(u) * np.linalg.norm(v)
+
+    c = i / (n + 1e-19)
+
+    return np.rad2deg(np.arccos(np.clip(c, -1.0, 1.0)))
