@@ -94,13 +94,9 @@ class PFC(object):
             raise Exception('PFC did not recieve from FEF')
         if 'from_bg' not in inputs:
             raise Exception('PFC did not recieve from BG')
-        if 'from_hp' not in inputs:
-            raise Exception('PFC did not recieve from HP')
 
         # Image from Visual cortex module.
         retina_image, pixel_errors, top_errors = inputs['from_vc']
-        # Allocentrix map image from hippocampal formatin module.
-        map_image = inputs['from_hp']
 
         # This is a very sample implementation of phase detection.
         # You should change here as you like.
