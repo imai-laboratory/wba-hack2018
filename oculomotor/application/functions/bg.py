@@ -100,11 +100,6 @@ class BG(object):
         hp_data_latents_buffers = inputs['from_hp']  # .shape(7, 6, 8)
 
         # TODO(->smatsumori): selecet episodes from current tasks
-
-        # TODO: remove below
-        #if 0 < pfc_data:
-        #    print("\033 internal reward!! \033[0m")
-        #reward, done = inputs['from_environment'][0] + pfc_data, inputs['from_environment'][1]
         reward, done = inputs['from_environment'][0], inputs['from_environment'][1]
 
         # default FEF shape.(128, 3) -> (64, 3)
