@@ -45,11 +45,15 @@ class CursorFindAccumulator(object):
         self.likelihood *= self.decay_rate
 
 # Accumulator Based Arbitration Model
+# https://link.springer.com/chapter/10.1007/978-3-319-70087-8_63
+# we proposed arbitration model based on prefrontal cortex
 class Abam:
     def __init__(self, size, decay_rate=0.9):
         self.values = np.zeros((size), dtype=np.float32)
         self.decay_rate = decay_rate
 
+    # accumulate max value
+    # others are discounted
     def accumulate(self, values):
         max_index = np.argmax(values)
         self.values *= self.decay_rate
@@ -79,6 +83,8 @@ class PFC(object):
 
         self.vae_cursor_accumulator = Abam(len(MODEL_PATHS.keys()))
         self.cursor_find_accmulator = CursorFindAccumulator()
+        # replace cursor_find_accmulator with vae error accumulator
+        # if vae is not consistently reliable, the scene is finding cursor
         self.vae_error_accumulators = {}
         for name in MODEL_PATHS.keys():
             self.vae_error_accumulators[name]= Accumulator()
@@ -111,16 +117,23 @@ class PFC(object):
 
         # accumulate reconstruction error
         errors = OrderedDict()
-        for name in MODEL_PATHS.keys():
+        names = list(MODEL_PATHS.keys())
+        for name in names:
             pixel_error = pixel_errors[name]
+            # scalar mean value
             errors[name] = pixel_error.mean(-1).mean(-1).mean(-1)
+        # sort keys because dictionary is not consistently ordered
         sorted_errors = OrderedDict()
         for k, v in sorted(errors.items(), key=lambda x: x[0]):
             sorted_errors[k] = v
-        self.vae_cursor_accumulator.accumulate(10*-np.array(list(sorted_errors.values())))
-        current_task = list(pixel_errors.keys())[np.argmin(list(errors.values()))]
+        # negate errors to accumulate most reliable one
+        self.vae_cursor_accumulator.accumulate(
+            -np.array(list(sorted_errors.values())))
+        # current task according to most reliable vae
+        current_task = names[np.argmin(list(errors.values()))]
         self.last_current_task = current_task
 
+        # 8.5 is hyperparameter of threshold
         if self.phase == Phase.INIT:
             if self.vae_cursor_accumulator.output() < 8.5:
                 self.phase = Phase.START
@@ -136,10 +149,7 @@ class PFC(object):
             if self.vae_cursor_accumulator.output() < 8.5:
                 self.phase = Phase.START
 
-        # TODO: update fef_message signal
         if self.phase == Phase.INIT or self.phase == Phase.START:
-            # TODO: 領野をまたいだ共通phaseをどう定義するか？
-            # original 0
             fef_message = 0
         else:
             fef_message = 1
