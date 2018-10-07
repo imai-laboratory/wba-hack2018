@@ -106,19 +106,26 @@ class BG(object):
         # psudo action space (can we pass images or features?)
         if self.skip or pfc_data_findcursor == 1:
             # action space will be fixed
-            accmulator_size = len(fef_data)
+            saliency_maps = np.array(fef_data)
+            accmulator_size = saliency_maps.size
             # Set threshold as 0.1 (as dummy test)
-            likelihood_thresholds = np.ones([accmulator_size], dtype=np.float32) * 0.3
+            likelihood_thresholds = np.ones(
+                [accmulator_size], dtype=np.float32) * 0.3
         else:
             with self.sess.as_default():
                 # TODO(->seno): change order
-                old_saliency = np.array(fef_data)[64:128][:,0]
-                old_saliency = np.reshape(old_saliency, [1, 8, 8, 1])
-                error_saliency = np.array(fef_data)[128:][:,0]
-                error_saliency = np.reshape(error_saliency, [1, 8, 8, 1])
+                # saliency_maps.shape (3, 8, 8) (saliency, cursor, error)
+                saliency_maps = np.array(fef_data)
+                old_saliency = saliency_maps[0].reshape((1, 8, 8, 1))
+
+                # skip cursor saliency (no need to feed into ppo)
+                error_saliency = saliency_maps[2].reshape((1, 8, 8, 1))
                 ppo_input = np.vstack([old_saliency, error_saliency])
+
+                # ppo_input.shape: (1, 8, 8, 2)
                 ppo_input = np.transpose(ppo_input, [3, 1, 2, 0])
-                likelihood_thresholds = (self.agent.act(ppo_input, [reward], [done])[0] + 1.0) / 2.0
+                likelihood_thresholds = (
+                    self.agent.act(ppo_input, [reward], [done])[0] + 1.0) / 2.0
                 likelihood_thresholds = np.clip(likelihood_thresholds, 0.0, 1.0)
                 self.step += 1
                 self.last_bg_data = likelihood_thresholds

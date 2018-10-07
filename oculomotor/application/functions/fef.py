@@ -209,13 +209,16 @@ class FEF(object):
         for error_accumulator in self.error_accumulators:
             error_accumulator.post_process()
 
-        # collect all outputs (nx64, 3) -> (n, 64, 3) -> (n, 8, 8, 3)?
+        # collect all outputs (nx64, 3) -> (n, 64) -> (n, 8, 8)?
         output = self._collect_output()
+        reshaped_output = np.array(output).reshape(
+            3, 64, 3)[:, :, 0].reshape(3, 8, 8).tolist()
+        # .transpose((1, 2, 0))
 
         # TODO: pass feature extracted to bg?
         # NOTE: do not change the output size of to_sc (=action space of BG)
         return dict(to_pfc=None,
-                    to_bg=(output, to_bg_latent),
+                    to_bg=(reshaped_output, to_bg_latent),
                     to_sc=output,
                     to_cb=None)
 
