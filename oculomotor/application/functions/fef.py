@@ -261,11 +261,11 @@ class FEF(object):
         for error_accumulator in self.error_accumulators:
             error_accumulator.post_process()
 
-        # collect all outputs (nx64, 3) -> (n, 64) -> (n, 8, 8)?
+        # collect all outputs (Nx64, 3) -> (n, 64) -> (n, 8, 8)
+        # where N is a features for bg input
         output = self._collect_output()
         reshaped_output = np.array(output).reshape(
             3, 64, 3)[:, :, 0].reshape(3, 8, 8).tolist()
-        # .transpose((1, 2, 0))
 
         # opticalxflow (8, 8, 1), opticalyflow (8, 8, 1)
         # output.append(opticalxflow)
@@ -277,9 +277,6 @@ class FEF(object):
 #        output.append(np.expand_dims(opticalyflow.reshape(-1), axis=1))
 #        output = np.array(output, dtype=np.float32)
 
-
-        # TODO: pass feature extracted to bg?
-        # NOTE: do not change the output size of to_sc (=action space of BG)
         return dict(to_pfc=None,
                     to_bg=(reshaped_output, to_bg_latent),
                     to_sc=output,
@@ -291,7 +288,7 @@ class FEF(object):
             output.append(saliency_accumulator.output)
         for cursor_accumulator in self.cursor_accumulators:
             output.append(cursor_accumulator.output)
-            
+
 #        for opticalxflow_accumulator in self.opticalxflow_accumulators:
 #            output.append(opticalxflow_accumulator.output)
 #        for opticalyflow_accumulator in self.opticalyflow_accumulators:
