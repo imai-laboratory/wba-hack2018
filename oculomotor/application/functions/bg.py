@@ -10,6 +10,8 @@ from .ppo.agent import Agent
 from .ppo.network import make_network
 from .ppo.scheduler import LinearScheduler, ConstantScheduler
 
+from .constants import MODEL_PATHS
+
 """
 This is an example implemention of BG (Basal ganglia) module.
 You can change this as you like.
@@ -95,9 +97,13 @@ class BG(object):
 
         # fef_latent_data.shape: (1, 8)
         fef_data, fef_latent_data = inputs['from_fef']
-        pfc_data = inputs['from_pfc'][0]
         pfc_data_findcursor, _, current_task = inputs['from_pfc']
-        hp_data_latents_buffers = inputs['from_hp']  # .shape(7, 6, 8)
+        hp_data = inputs['from_hp']
+
+        # from_hp.shape(7, 6, 8)
+        hp_data_latents_selected = [
+            buf[current_task] for buf in hp_data
+        ]
 
         # TODO(->smatsumori): selecet episodes from current tasks
         reward, done = inputs['from_environment'][0], inputs['from_environment'][1]
@@ -120,10 +126,24 @@ class BG(object):
 
                 # skip cursor saliency (no need to feed into ppo)
                 error_saliency = saliency_maps[2].reshape((1, 8, 8, 1))
-                ppo_input = np.vstack([old_saliency, error_saliency])
 
-                # ppo_input.shape: (1, 8, 8, 2)
-                ppo_input = np.transpose(ppo_input, [3, 1, 2, 0])
+                ppo_saliency_data = np.vstack([old_saliency, error_saliency])
+
+                # fef_latent_data.shape(1, 8) 
+                # hp_data_latents_selected.shape (7, 8)
+                # ppo_latent_data.shape (1, 8, 8, 1)
+                ppo_latent_data = np.vstack(
+                    (
+                        np.array(fef_latent_data)[np.newaxis, :],
+                        np.array(hp_data_latents_selected)
+                    )
+                ).reshape((1, 8, 8, 1))
+
+                # ppo_input.shape(3, 8, 8, 1) -> (1, 8, 8, 3)
+                ppo_input = np.vstack(
+                    (ppo_saliency_data, ppo_latent_data),
+                ).transpose((3, 1, 2, 0))
+
                 likelihood_thresholds = (
                     self.agent.act(ppo_input, [reward], [done])[0] + 1.0) / 2.0
                 likelihood_thresholds = np.clip(likelihood_thresholds, 0.0, 1.0)

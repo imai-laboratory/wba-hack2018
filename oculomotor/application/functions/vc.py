@@ -125,7 +125,7 @@ class VC(object):
                     top_error = cv2.resize(top_error, (128, 128))
 
                     top_errors[name] = np.array(top_error, dtype=np.float32) / 255.0
-                    dc_latents[name] = latent
+                    dc_latents[name] = latent[0]
 
             to_fef = (retina_image, pixel_errors, top_errors, dc_latents)
             to_pfc = (retina_image, pixel_errors, top_errors)

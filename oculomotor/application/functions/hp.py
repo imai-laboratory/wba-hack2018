@@ -20,9 +20,8 @@ class HP(object):
         self.map_image = np.zeros((128, 128, 3), dtype=np.uint8)
 
         # buffer for latents (7, 6, 8) (buffer_len, tasks, features)
-        self.latents_buffer = deque(
-            [[{k: np.zeros(8) for k in MODEL_PATHS.keys()}]] * 7
-        )
+        lat_buffers = {k: np.zeros(8) for k in MODEL_PATHS.keys()}
+        self.latents_buffer = deque([lat_buffers] * 7)
 
     def __call__(self, inputs):
         if 'from_retina' not in inputs:
