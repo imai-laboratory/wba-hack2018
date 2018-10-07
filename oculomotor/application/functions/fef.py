@@ -18,7 +18,7 @@ GRID_OPTICAL_WIDTH = 64 // 4
 
 SALIENCY_COEFF = 0.3
 OPTICALFLOW_COEFF = 0.3
-CURSOR_MATCH_COEFF = 0.3
+CURSOR_MATCH_COEFF = 0.5
 
 
 class ActionAccumulator(object):
@@ -127,6 +127,7 @@ class CursorAccumulator(ActionAccumulator):
         red_min = np.array([150, 0, 0], np.uint8)
         red_max = np.array([255, 100, 100], np.uint8)
         region_image_red = cv2.inRange(region_image, red_min, red_max)
+        region_image_red = region_image_red / 255
         match = np.mean(region_image_red)
         
         # Find the maximum match value
@@ -312,8 +313,8 @@ class FEF(object):
         for background_accumulator in self.background_accumulators:
             background_output.append(background_accumulator.output[0])
         background_output = np.array(background_output)
-        if np.mean(background_output) > 0.5:
+        if np.mean(background_output) > 0.3:
             background_output = np.zeros(background_output.shape)
-        output[64:128][:,0] = background_output
-        
+        output[64:128][:,0] += background_output
+
         return output
