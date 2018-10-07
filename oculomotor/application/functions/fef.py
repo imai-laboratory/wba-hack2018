@@ -14,10 +14,9 @@ You can change this as you like.
 
 GRID_DIVISION = 8
 GRID_WIDTH = 128 // GRID_DIVISION
-GRID_OPTICAL_WIDTH = 64 // 4
 
 SALIENCY_COEFF = 0.3
-CURSOR_MATCH_COEFF = 1.0
+CURSOR_MATCH_COEFF = 0.5
 
 
 class ActionAccumulator(object):
@@ -203,11 +202,14 @@ class FEF(object):
                 angle = np.max([angle, angle_]) - (np.abs(angle - angle_) / 2)
 
         rad = np.array(range(0, 360, 45))
-        ind = np.argmax(-np.abs(rad - angle))
+        angle = np.where(np.abs(rad) - angle + 180 > 360,
+                         -(np.abs(rad - angle - 180)),
+                         -(np.abs(rad - angle + 180)))
+        ind = np.argmax(angle)
 
         a0 = np.zeros([8, 8])
         a0[3:5, 6:8] = 1
-        
+       
         a1 = np.zeros([8, 8])
         a1[0:2, 6:8] = 1
 
@@ -231,9 +233,10 @@ class FEF(object):
 
         a = [a0, a1, a2, a3, a4, a5, a6, a7]
         arrow = a[ind]
-
+        print(arrow)
         ax = np.zeros([8, 8])
         ay = np.zeros([8, 8])
+        
         for ix in range(GRID_DIVISION):
             pixel_x = GRID_WIDTH * ix
             cx = 2.0 / GRID_DIVISION * (ix + 0.5) - 1.0
@@ -244,6 +247,10 @@ class FEF(object):
                 ax[ix, iy] = -cx
                 ay[ix, iy] = -cy
 
+        arrow = arrow.reshape(64, 1)
+        ax = ax.reshape(64, 1)
+        ay = ay.reshape(64, 1)
+#        print(arrow.shape, ax.shape, ay.shape)
         arrow_output = np.concatenate([arrow, ax], axis=1)
         arrow_output = np.concatenate([arrow_output, ay], axis=1)
                 
@@ -286,8 +293,10 @@ class FEF(object):
         # collect all outputs (Nx64, 3) -> (n, 64) -> (n, 8, 8)
         # where N is a features for bg input
         output = self._collect_output()
+        arrow_output = arrow_output.reshape(64, 3)
+        output = np.vstack([output, arrow_output])
         reshaped_output = np.array(output).reshape(
-            3, 64, 3)[:, :, 0].reshape(3, 8, 8).tolist()
+            4, 64, 3)[:, :, 0].reshape(4, 8, 8).tolist()
 
         # TODO: change shape output
 #        output.append(np.expand_dims(opticalxflow.reshape(-1), axis=1))
@@ -319,7 +328,7 @@ class FEF(object):
         if np.mean(background_output) > 0.3:
             background_output = np.zeros(background_output.shape)
         output[64:128][:,0] += background_output
-        #output[64:128][:,0] = np.abs(output[64:128][:,0])
+
         output[64:128][:,0] = np.clip(output[64:128][:,0], 0, 1)
 
         return output

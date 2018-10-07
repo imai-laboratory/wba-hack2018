@@ -154,6 +154,9 @@ class BG(object):
             # Set threshold as 0.1 (as dummy test)
             likelihood_thresholds = np.ones(
                 [accmulator_size], dtype=np.float32) * 0.3
+        elif current_task == 'RandomDot':
+             likelihood_thresholds = np.ones(
+                 [64], dtype=np.float32) * 0.3
         else:
             with self.sess.as_default():
                 saliency_maps = np.array(fef_data)
