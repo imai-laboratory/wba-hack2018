@@ -93,9 +93,15 @@ class BG(object):
         if 'from_fef' not in inputs:
             raise Exception('BG did not recieve from FEF')
 
-        fef_data = inputs['from_fef']
+        # fef_latent_data.shape: (1, 8)
+        fef_data, fef_latent_data = inputs['from_fef']
         pfc_data = inputs['from_pfc'][0]
         pfc_data_findcursor, _, current_task = inputs['from_pfc']
+        hp_data_latents_buffers = inputs['from_hp']  # .shape(7, 6, 8)
+
+        # TODO(->smatsumori): selecet episodes from current tasks
+
+        # TODO: remove below
         #if 0 < pfc_data:
         #    print("\033 internal reward!! \033[0m")
         #reward, done = inputs['from_environment'][0] + pfc_data, inputs['from_environment'][1]
@@ -110,9 +116,11 @@ class BG(object):
             likelihood_thresholds = np.ones([accmulator_size], dtype=np.float32) * 0.3
         else:
             with self.sess.as_default():
-                saliency = np.array(fef_data)[64:][:,0]
-                old_saliency = saliency[:64].reshape(1, 8, 8, 1)
-                error_saliency = saliency[64:].reshape(1, 8, 8, 1)
+                # TODO(->seno): change order
+                old_saliency = np.array(fef_data)[64:128][:,0]
+                old_saliency = np.reshape(old_saliency, [1, 8, 8, 1])
+                error_saliency = np.array(fef_data)[128:][:,0]
+                error_saliency = np.reshape(error_saliency, [1, 8, 8, 1])
                 ppo_input = np.vstack([old_saliency, error_saliency])
                 ppo_input = np.transpose(ppo_input, [3, 1, 2, 0])
                 likelihood_thresholds = (self.agent.act(ppo_input, [reward], [done])[0] + 1.0) / 2.0

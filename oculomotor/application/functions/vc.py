@@ -5,21 +5,15 @@ import numpy as np
 import tensorflow as tf
 from .vae.train import build
 from .vae import constants
+from .constants import MODEL_PATHS
 from collections import OrderedDict
 # from tensorflow import keras as K
 
-def softmax(values):
+def softmax(values, temp=0.1):
+    values /= temp
     e_x = np.exp(values - np.max(values))
     return e_x / e_x.sum(axis=0)
 
-model_paths = OrderedDict({
-    'PointToTarget': 'vae_models/pointtotarget/model.ckpt',
-    'ChangeDetection': 'vae_models/changedetection/model.ckpt',
-    'OddOneOut': 'vae_models/oddoneout/model.ckpt',
-    'VisualSearch': 'vae_models/visualsearch/model.ckpt',
-    'RandomDot': 'vae_models/randomdot/model.ckpt',
-    'MultipleObject': 'vae_models/multipleobjecttracking/model.ckpt'
-})
 
 class VC(object):
     """ Visual Cortex module.
@@ -37,7 +31,7 @@ class VC(object):
             # self.model = K.applications.vgg16.VGG16()
             # self.model = K.applications.mobilenet.MobileNet()
             tensors = OrderedDict()
-            for i, (name, path) in enumerate(model_paths.items()):
+            for i, (name, path) in enumerate(MODEL_PATHS.items()):
                 tensor = build(constants, name)
                 tensors[name] = tensor
             self.reconst, self.generate = self.build_tf_call(tensors)
@@ -51,7 +45,7 @@ class VC(object):
 
             # create savers
             savers = {}
-            for name in model_paths.keys():
+            for name in MODEL_PATHS.keys():
                 variables = tf.get_collection(
                     tf.GraphKeys.TRAINABLE_VARIABLES, name)
                 var_list = {}
@@ -65,7 +59,7 @@ class VC(object):
 
             # load all saved models
             for name, saver in savers.items():
-                saver.restore(self.sess, model_paths[name])
+                saver.restore(self.sess, MODEL_PATHS[name])
         self.skip = skip
         self.last_vae_reconstruction = None
         self.last_vae_top_errors = None
@@ -85,6 +79,7 @@ class VC(object):
 
 
         # feature extraction
+        # TODO: remove skip
         if self.skip:
             processed_images = (retina_image, None)
         else:
@@ -93,14 +88,22 @@ class VC(object):
             reshaped_image = sp.misc.imresize(
                 retina_image, reshape_size, interp='bilinear')
 
-            # VAE reconstruction
+            # VAE reconstruction and get latent parameters
             input_image = np.array(reshaped_image, dtype=np.float32) / 255.0
             with self.sess.as_default():
-                recont_images = self.reconst([input_image])
+                # WARN: using magi no
+                # reconstructed.len: 12
+                reconstructed = self.reconst([input_image])
+
+                # recont_images.shape: (6, 128, 128, 3)
+                # latents.shape: (6, 8)
+                recont_images, latents = reconstructed[:6], reconstructed[6:]
                 images = OrderedDict()
                 pixel_errors = OrderedDict()
                 top_errors = OrderedDict()
-                for image, name in zip(recont_images, model_paths.keys()):
+                dc_latents = {}
+                for image, latent, name\
+                        in zip(recont_images, latents, MODEL_PATHS.keys()):
                     images[name] = image[0]
                     pixel_error = (image[0] - input_image) ** 2
                     pixel_errors[name] = pixel_error
@@ -120,26 +123,38 @@ class VC(object):
                     top_error = np.reshape(flatten_mean_error, pixel_error.shape[:-1])
                     top_error = np.array(top_error * 255.0, dtype=np.uint8)
                     top_error = cv2.resize(top_error, (128, 128))
-                    top_errors[name] = np.array(top_error, dtype=np.float32)
 
-            processed_images = (retina_image, pixel_errors, top_errors)
+                    top_errors[name] = np.array(top_error, dtype=np.float32) / 255.0
+                    dc_latents[name] = latent
+
+            to_fef = (retina_image, pixel_errors, top_errors, dc_latents)
+            to_pfc = (retina_image, pixel_errors, top_errors)
+            to_hp = (dc_latents)
             self.last_vae_reconstruction = images
             self.last_vae_top_errors = top_errors
 
         # Current implementation just passes through input retina image to FEF and PFC.
         # TODO: change pfc fef
-        return dict(to_fef=processed_images,
-                    to_pfc=processed_images)
+        return dict(to_fef=to_fef, to_pfc=to_pfc, to_hp=to_hp)
 
     def build_tf_call(self, tensors):
         def reconstruct(inputs):
             feed_dict = {}
             ops = []
+
+            # tensor.values for each tasks
             for tensor in tensors.values():
                 feed_dict[tensor['input']] = inputs
                 feed_dict[tensor['keep_prob']] = 1.0
                 feed_dict[tensor['deterministic']] = 1.0
                 ops.append(tensor['reconst'])
+
+            # get latent parameters
+            # mu.output.shape (6, 8)
+            for tensor in tensors.values():
+                ops.append(tensor['mu'])
+
+            # ops.len == 12
             sess = tf.get_default_session()
             return sess.run(ops, feed_dict)
 
