@@ -1,4 +1,6 @@
 # wba-hack2018
+See `oculomotor` for the hackathon architecture.
+
 ## 訓練データ作成方法
 ### OddOneOut
 ```bash

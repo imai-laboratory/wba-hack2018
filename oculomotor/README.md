@@ -32,6 +32,27 @@ $ build-gpu.sh or build-cpu.sh
 
 #### Edit the files under `application/functions` as you like
 
+### Train beta-VAE
+First of all, dataset gathered by `../data/gen.py`.
+```
+$ ./download_data.sh <id> <file name>
+# id list
+# PointToTarget: 1PkkCUE5pbgcqF23YF6UEhMijtP-ISGBx
+# ChangeDetection: 1AIu3TFdl0lf5c1I3-fLn6dh6aMElOycc
+# OddOneOut: 1-az2ZcoVhr5vlEApQ7Rg9bTqHQYCbaxn
+# VisualSearch: 18auSTtm2-VTxNUNWIV-BD0gcslRpQSSX
+# MultipleObjectTracking: 12fM_HQUwSwEP4NcDRhrQyjSquDCNX_Db
+# RandomDot: 1F3QMDOvpOvxguUUIet6f2IjOTF_SUYwa
+```
+
+Then, train beta-vae.
+```
+# ./helpers/gpu_train_vae.sh on GPU
+$ ./helpers/train_vae.sh --modeldir <dirname> --data <above dataset>
+```
+
+Then, you see trained weights at `./saved_models/<dirname>`.
+
 ### Running in Interactive Mode
 #### Run the container using the helper script
 ![image](https://user-images.githubusercontent.com/5235131/46580950-f83e2800-ca69-11e8-8f4b-d6456428585f.png)
