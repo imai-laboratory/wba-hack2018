@@ -38,13 +38,13 @@ def get_content(content_type):
     return content
 
 
-def train(content, step_size, logger, model_name):
+def train(content, step_size, logger, model_name, use_ppo_models):
     retina = Retina()
     lip = LIP()
     vc = VC()
     pfc = PFC()
     fef = FEF()
-    bg = BG(model_name)
+    bg = BG(model_name, use_saved_models=use_ppo_models)
     sc = SC()
     hp = HP()
     cb = CB()
@@ -124,11 +124,13 @@ def main():
     parser.add_argument("--step_size", help="Training step size", type=int, default=1000000)
     parser.add_argument("--log_file", help="Log file name", type=str, default="experiment0")
     parser.add_argument("--model_name", help="Model name", type=str, default=None)
+    parser.add_argument("--use-ppo-models", help="use saved PPO models", action='store_true')
     args = parser.parse_args()
     content_type = args.content
     step_size = args.step_size
     log_file = args.log_file
     model_name = args.model_name
+    use_ppo_models = args.use_ppo_models
 
     # Create task content
     content = get_content(content_type)
@@ -140,7 +142,7 @@ def main():
     logger = Logger(log_path)
 
     # Start training
-    train(content, step_size, logger, model_name)
+    train(content, step_size, logger, model_name, use_ppo_models)
 
 
 if __name__ == '__main__':

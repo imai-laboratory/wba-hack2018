@@ -1,4 +1,6 @@
 # wba-hack2018
+See `oculomotor` for the hackathon architecture.
+
 ## Directory Structure
 - data
   - data extractor for beta VAE training
@@ -6,8 +8,6 @@
   - main execution files
 
 ## Create Datasets
-### OddOneOut (example)
-See `oculomotor` for the hackathon architecture.
 
 ## 訓練データ作成方法
 ### OddOneOut

@@ -7,6 +7,7 @@ from .vae.train import build
 from .vae import constants
 from .constants import MODEL_PATHS
 from .utils import softmax
+from .utils import create_variable_saver
 from collections import OrderedDict
 # from tensorflow import keras as K
 
@@ -37,12 +38,8 @@ class VC(object):
         for name in MODEL_PATHS.keys():
             variables = tf.get_collection(
                 tf.GraphKeys.TRAINABLE_VARIABLES, name)
-            var_list = {}
-            for var in variables:
-                key = var.name
-                # replace vae in namespace with task name
-                var_list[key.replace(name, 'vae')[:-2]] = var
-            savers[name] = tf.train.Saver(var_list)
+            # replace tensor names to fit saved graph
+            savers[name] = create_variable_saver(variables, name, 'vae')
 
         self.sess.__enter__()
         self.sess.run(tf.global_variables_initializer())

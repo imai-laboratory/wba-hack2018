@@ -228,7 +228,7 @@ def evaluate(logger, log_path):
     vc = VC()
     pfc = PFC()
     fef = FEF()
-    bg = BG()
+    bg = BG(use_saved_models=True)
     sc = SC()
     hp = HP()
     cb = CB()

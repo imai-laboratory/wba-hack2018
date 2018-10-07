@@ -128,7 +128,7 @@ class CursorAccumulator(ActionAccumulator):
         red_max = np.array([255, 100, 100], np.uint8)
         region_image_red = cv2.inRange(region_image, red_min, red_max)
         match = np.mean(region_image_red)
-
+        
         # Find the maximum match value
         self.accumulate(match * CURSOR_MATCH_COEFF)
         self.expose()

@@ -2,15 +2,17 @@ import os
 import numpy as np
 import tensorflow as tf
 import brica
-from .ppo import constants as ppconsts
-from . import constants as consts
-
 import datetime
+
+from collections import OrderedDict
+from .ppo import constants as ppconsts
 from .ppo.agent import Agent
 from .ppo.network import make_network
 from .ppo.scheduler import LinearScheduler, ConstantScheduler
-
+from .constants import NUM_ACTIONS
 from .constants import MODEL_PATHS
+from .constants import PPO_MODEL_PATHS
+from .utils import create_variable_saver
 
 """
 This is an example implemention of BG (Basal ganglia) module.
@@ -20,10 +22,11 @@ You can change this as you like.
 PATH = 'models'
 
 class BG(object):
-    def __init__(self, model_name=None, skip=False):
+    def __init__(self, model_name=None, skip=False, use_saved_models=False):
         self.timing = brica.Timing(5, 1, 0)
         self.step = 0
         self.model_name = model_name
+        self.use_saved_models = use_saved_models
         if model_name is not None:
             print('loading model: {}'.format(model_name))
         if not skip:
@@ -31,8 +34,6 @@ class BG(object):
         self.last_bg_data = None
 
     def __initialize_rl(self):
-        num_actions = consts.NUM_ACTIONS
-
         # TODO(->smatsumori): load from saved models
         # create network function
         model = make_network(
@@ -50,37 +51,76 @@ class BG(object):
 
         # build PPO agent
         # from https://github.com/takuseno/ppo
-        self.agent = Agent(
-            model,
-            num_actions,
-            nenvs=1,
-            lr=lr,
-            epsilon=epsilon,
-            gamma=ppconsts.GAMMA,
-            lam=ppconsts.LAM,
-            lstm_unit=ppconsts.LSTM_UNIT,
-            value_factor=ppconsts.VALUE_FACTOR,
-            entropy_factor=ppconsts.ENTROPY_FACTOR,
-            time_horizon=ppconsts.TIME_HORIZON,
-            batch_size=ppconsts.BATCH_SIZE,
-            grad_clip=ppconsts.GRAD_CLIP,
-            state_shape=ppconsts.STATE_SHAPE,
-            epoch=ppconsts.EPOCH,
-            use_lstm=ppconsts.LSTM,
-            continuous=True,
-            upper_bound=1.0
-        )
+        if self.use_saved_models:
+            self.agents = OrderedDict()
+            savers = OrderedDict()
+            for name, path in PPO_MODEL_PATHS.items():
+                agent = Agent(
+                    model,
+                    NUM_ACTIONS,
+                    nenvs=1,
+                    lr=lr,
+                    epsilon=epsilon,
+                    gamma=ppconsts.GAMMA,
+                    lam=ppconsts.LAM,
+                    lstm_unit=ppconsts.LSTM_UNIT,
+                    value_factor=ppconsts.VALUE_FACTOR,
+                    entropy_factor=ppconsts.ENTROPY_FACTOR,
+                    time_horizon=ppconsts.TIME_HORIZON,
+                    batch_size=ppconsts.BATCH_SIZE,
+                    grad_clip=ppconsts.GRAD_CLIP,
+                    state_shape=ppconsts.STATE_SHAPE,
+                    epoch=ppconsts.EPOCH,
+                    use_lstm=ppconsts.LSTM,
+                    continuous=True,
+                    upper_bound=1.0,
+                    name=name
+                )
+                self.agents[name] = agent
+                variables = tf.get_collection(
+                    tf.GraphKeys.TRAINABLE_VARIABLES, name)
+                savers[name] = create_variable_saver(variables, name, 'ppo')
+        else:
+            self.agent = Agent(
+                model,
+                NUM_ACTIONS,
+                nenvs=1,
+                lr=lr,
+                epsilon=epsilon,
+                gamma=ppconsts.GAMMA,
+                lam=ppconsts.LAM,
+                lstm_unit=ppconsts.LSTM_UNIT,
+                value_factor=ppconsts.VALUE_FACTOR,
+                entropy_factor=ppconsts.ENTROPY_FACTOR,
+                time_horizon=ppconsts.TIME_HORIZON,
+                batch_size=ppconsts.BATCH_SIZE,
+                grad_clip=ppconsts.GRAD_CLIP,
+                state_shape=ppconsts.STATE_SHAPE,
+                epoch=ppconsts.EPOCH,
+                use_lstm=ppconsts.LSTM,
+                continuous=True,
+                upper_bound=1.0,
+                name='ppo'
+            )
 
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
         self.sess = tf.Session(config=config)
         self.sess.__enter__()
-        self.saver = tf.train.Saver()
-        if self.model_name:
-            if not self.model_name.endswith('.ckpt'):
-                self.model_name += '.ckpt'
-            self.saver.restore(self.sess, os.path.join(PATH, self.model_name))
         self.sess.run(tf.global_variables_initializer())
+
+        if self.use_saved_models:
+            print('load ppo models')
+            # load all saved models
+            for name, saver in savers.items():
+                if PPO_MODEL_PATHS[name] is not None:
+                    saver.restore(self.sess, PPO_MODEL_PATHS[name])
+        else:
+            self.saver = tf.train.Saver()
+            if self.model_name:
+                if not self.model_name.endswith('.ckpt'):
+                    self.model_name += '.ckpt'
+                self.saver.restore(self.sess, os.path.join(PATH, self.model_name))
 
 
     def __call__(self, inputs, update=False):
@@ -140,7 +180,12 @@ class BG(object):
                 # ppo_input.shape(3, 8, 8, 1) -> (1, 8, 8, 3)
                 ppo_input = np.transpose(ppo_input, [3, 1, 2, 0])
 
-                action = self.agent.act(ppo_input, [reward], [done])[0]
+                if self.use_saved_models:
+                    # use models trained on current task
+                    agent = self.agents[current_task]
+                    action = agent.act(ppo_input, [reward], [done])[0]
+                else:
+                    action = self.agent.act(ppo_input, [reward], [done])[0]
                 # normalize thresholds between 0.0 and 1.0
                 likelihood_thresholds = np.clip((action + 1.0) / 2.0, 0.0, 1.0)
                 self.step += 1
@@ -151,4 +196,7 @@ class BG(object):
                     to_sc=likelihood_thresholds)
 
     def save_model(self):
-        self.saver.save(self.sess, os.path.join(PATH, datetime.datetime.now().strftime('%m%d-%s')+'.ckpt'))
+        if not self.use_saved_models:
+            path = os.path.join(
+                PATH, datetime.datetime.now().strftime('%m%d-%s')+'.ckpt')
+            self.saver.save(self.sess, path)
