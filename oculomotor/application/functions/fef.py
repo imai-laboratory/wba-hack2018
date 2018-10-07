@@ -239,7 +239,7 @@ class FEF(object):
 
         for cursor_accumulator in self.cursor_accumulators:
             output.append(cursor_accumulator.output)
-             
+
         for error_accumulator in self.error_accumulators:
             output.append(error_accumulator.output)
 

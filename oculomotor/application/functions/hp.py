@@ -9,8 +9,12 @@ from .constants import MODEL_PATHS
 
 class HP(object):
     """ Hippocampal formation module.
-
-    Create allocentric panel image.
+    We have two basic functions here.
+        1. Create allocentric panel image. (not using this feature)
+        2. Working meomry
+            The working memory keeps the latest
+            7 extracted features (latent parameters) in the FIFO style memory.
+            This module enables to embed timer series features in BG.
     """
 
     def __init__(self):
@@ -28,8 +32,9 @@ class HP(object):
             raise Exception('HP did not recieve from Environment')
         if 'from_vc' not in inputs:
             raise Exception('HP did not recieve from VC')
-        # This image input from environment is a kind of cheat and not biologically
-        # acculate.
+        # NOTE: we are not using this function
+        # This image input from environment is
+        # a kind of cheat and not biologically acculate.
         if inputs['from_retina'] is not None:
             image, angle = inputs['from_retina'] # (128, 128, 3), (2)
             # Transform input image into allocentric panel image
@@ -37,6 +42,7 @@ class HP(object):
             # Overlay into existing map image
             self._overlay_extracted_image(self.map_image, transforemed_image)
 
+        # WORKING MEMORY
         # get latents from visual cortex and append in a buffer (length 7)
         if inputs['from_vc'] is not None:
             self.latents_buffer.pop()
