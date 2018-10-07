@@ -121,7 +121,6 @@ class PFC(object):
         current_task = list(pixel_errors.keys())[np.argmin(list(errors.values()))]
         self.last_current_task = current_task
 
-        print(self.vae_cursor_accumulator.output())
         if self.phase == Phase.INIT:
             if self.vae_cursor_accumulator.output() < 8.5:
                 self.phase = Phase.START
@@ -136,8 +135,6 @@ class PFC(object):
         else:
             if self.vae_cursor_accumulator.output() < 8.5:
                 self.phase = Phase.START
-
-        print(self.phase)
 
         # TODO: update fef_message signal
         if self.phase == Phase.INIT or self.phase == Phase.START:
