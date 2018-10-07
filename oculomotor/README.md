@@ -25,6 +25,7 @@ $ git clone --recursive https://github.com/wbap/oculomotor
 
 #### Build the docker containers
 ```
+# warning: if you use GPU, you need nvidia-docker2
 $ cd oculomotor
 $ build-gpu.sh or build-cpu.sh
 ```
@@ -33,6 +34,10 @@ $ build-gpu.sh or build-cpu.sh
 
 ### Running in Interactive Mode
 #### Run the container using the helper script
+![image](https://user-images.githubusercontent.com/5235131/46580950-f83e2800-ca69-11e8-8f4b-d6456428585f.png)
+
+flask server starts child process to run trainning. This enables interactive mode to run much faster.
+Info request from js is removed to reduce number of requests, which also enables users to browse training from middle of training.
 ```
 $ ./helpers/interactive.sh
 # on GPU
