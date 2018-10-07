@@ -22,7 +22,6 @@ PATH = 'models'
 class BG(object):
     def __init__(self, model_name=None, skip=False):
         self.timing = brica.Timing(5, 1, 0)
-        self.skip = skip
         self.step = 0
         self.model_name = model_name
         if model_name is not None:
@@ -49,6 +48,8 @@ class BG(object):
             lr = ConstantScheduler(ppconsts.LR, 'lr')
             epsilon = ConstantScheduler(ppconsts.EPSILON, 'epsilon')
 
+        # build PPO agent
+        # from https://github.com/takuseno/ppo
         self.agent = Agent(
             model,
             num_actions,
@@ -70,9 +71,7 @@ class BG(object):
             upper_bound=1.0
         )
 
-        config = tf.ConfigProto(
-            device_count={'GPU': 2}  # NO GPU
-        )
+        config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
         self.sess = tf.Session(config=config)
         self.sess.__enter__()
@@ -101,54 +100,43 @@ class BG(object):
         hp_data = inputs['from_hp']
 
         # from_hp.shape(7, 6, 8)
-        hp_data_latents_selected = [
-            buf[current_task] for buf in hp_data
-        ]
+        hp_data_latents_selected = [buf[current_task] for buf in hp_data]
 
-        # TODO(->smatsumori): selecet episodes from current tasks
-        reward, done = inputs['from_environment'][0], inputs['from_environment'][1]
+        reward = inputs['from_environment'][0]
+        done = inputs['from_environment'][1]
 
-        # default FEF shape.(128, 3) -> (64, 3)
-        # psudo action space (can we pass images or features?)
-        if self.skip or pfc_data_findcursor == 1:
-            # action space will be fixed
+        with self.sess.as_default():
             saliency_maps = np.array(fef_data)
-            accmulator_size = saliency_maps.size
-            # Set threshold as 0.1 (as dummy test)
-            likelihood_thresholds = np.ones(
-                [accmulator_size], dtype=np.float32) * 0.3
-        else:
-            with self.sess.as_default():
-                # TODO(->seno): change order
-                # saliency_maps.shape (3, 8, 8) (saliency, cursor, error)
-                saliency_maps = np.array(fef_data)
-                old_saliency = saliency_maps[0].reshape((1, 8, 8, 1))
+            old_saliency = saliency_maps[0].reshape((1, 8, 8, 1))
 
-                # skip cursor saliency (no need to feed into ppo)
-                error_saliency = saliency_maps[2].reshape((1, 8, 8, 1))
+            # skip cursor saliency (no need to feed into ppo)
+            error_saliency = saliency_maps[2].reshape((1, 8, 8, 1))
 
-                ppo_saliency_data = np.vstack([old_saliency, error_saliency])
+            # (2, 8, 8, 1)
+            ppo_saliency_data = np.vstack([old_saliency, error_saliency])
 
-                # fef_latent_data.shape(1, 8) 
-                # hp_data_latents_selected.shape (7, 8)
-                # ppo_latent_data.shape (1, 8, 8, 1)
-                ppo_latent_data = np.vstack(
-                    (
-                        np.array(fef_latent_data)[np.newaxis, :],
-                        np.array(hp_data_latents_selected)
-                    )
-                ).reshape((1, 8, 8, 1))
+            # fef_latent_data.shape(1, 8) 
+            # hp_data_latents_selected.shape (7, 8)
+            # ppo_latent_data.shape (1, 8, 8, 1)
+            ppo_latent_data = np.vstack(
+                (
+                    np.array(fef_latent_data)[np.newaxis, :],
+                    np.array(hp_data_latents_selected)
+                )
+            ).reshape((1, 8, 8, 1))
 
-                # ppo_input.shape(3, 8, 8, 1) -> (1, 8, 8, 3)
-                ppo_input = np.vstack(
-                    (ppo_saliency_data, ppo_latent_data),
-                ).transpose((3, 1, 2, 0))
+            # (3, 8, 8, 1)
+            ppo_input = np.vstack((ppo_saliency_data, ppo_latent_data))
+            # ppo_input.shape(3, 8, 8, 1) -> (1, 8, 8, 3)
+            ppo_input = np.transpose(ppo_input, [3, 1, 2, 0])
 
-                likelihood_thresholds = (
-                    self.agent.act(ppo_input, [reward], [done])[0] + 1.0) / 2.0
-                likelihood_thresholds = np.clip(likelihood_thresholds, 0.0, 1.0)
-                self.step += 1
-                self.last_bg_data = likelihood_thresholds
+            action = self.agent.act(ppo_input, [reward], [done])[0]
+            # normalize thresholds between 0.0 and 1.0
+            likelihood_thresholds = (action + 1.0) / 2.0
+            likelihood_thresholds = np.clip(
+                likelihood_thresholds, 0.0, 1.0)
+            self.step += 1
+            self.last_bg_data = likelihood_thresholds
 
         return dict(to_pfc=None,
                     to_fef=None,
