@@ -120,7 +120,7 @@ class VC(object):
                     top_error = np.reshape(flatten_mean_error, pixel_error.shape[:-1])
                     top_error = np.array(top_error * 255.0, dtype=np.uint8)
                     top_error = cv2.resize(top_error, (128, 128))
-                    top_errors[name] = np.array(top_error, dtype=np.float32)
+                    top_errors[name] = np.array(top_error, dtype=np.float32) / 255.0
 
             processed_images = (retina_image, pixel_errors, top_errors)
             self.last_vae_reconstruction = images
