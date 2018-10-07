@@ -128,9 +128,9 @@ class Inspector(object):
                 continue
             line = np.vstack([x1, y1, x2, y2]).T.reshape(-1, 2, 2)
             line = np.int32(line + 0.5)
-             
+
             cv2.polylines(image, line, 0, (0, 255, 0))
-        
+            
         self.show_image(image, 128 * 3 + 8, 8, "opt_flow")
 
     def show_map_image(self, map_image):
