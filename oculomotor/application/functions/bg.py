@@ -30,10 +30,6 @@ class BG(object):
         self.last_bg_data = None
 
     def __initialize_rl(self):
-        # TODO: do we need convs?
-        # state_shape = [ppconsts.STATE_SHAPE]  # state_shape = input shape of the network
-        # state_shape = (128, 3)
-        state_shape = [8, 8, 6]
         num_actions = consts.NUM_ACTIONS
 
         # TODO(->smatsumori): load from saved models
@@ -65,7 +61,7 @@ class BG(object):
             time_horizon=ppconsts.TIME_HORIZON,
             batch_size=ppconsts.BATCH_SIZE,
             grad_clip=ppconsts.GRAD_CLIP,
-            state_shape=state_shape,
+            state_shape=ppconsts.STATE_SHAPE,
             epoch=ppconsts.EPOCH,
             use_lstm=ppconsts.LSTM,
             continuous=True,
@@ -114,10 +110,12 @@ class BG(object):
             likelihood_thresholds = np.ones([accmulator_size], dtype=np.float32) * 0.3
         else:
             with self.sess.as_default():
-                # TODO(->smatsumori): check input shape
-                # fef_data = np.array(fef_data)[np.newaxis, :, :]
-                fef_data = np.array(fef_data).reshape(64, 6).reshape(1, 8, 8, 6)
-                likelihood_thresholds = (self.agent.act(fef_data, [reward], [done])[0] + 1.0) / 2.0
+                saliency = np.array(fef_data)[64:][:,0]
+                old_saliency = saliency[:64].reshape(1, 8, 8, 1)
+                error_saliency = saliency[64:].reshape(1, 8, 8, 1)
+                ppo_input = np.vstack([old_saliency, error_saliency])
+                ppo_input = np.transpose(ppo_input, [3, 1, 2, 0])
+                likelihood_thresholds = (self.agent.act(ppo_input, [reward], [done])[0] + 1.0) / 2.0
                 likelihood_thresholds = np.clip(likelihood_thresholds, 0.0, 1.0)
                 self.step += 1
                 self.last_bg_data = likelihood_thresholds

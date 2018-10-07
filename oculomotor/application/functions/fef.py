@@ -135,6 +135,7 @@ class FEF(object):
     def __init__(self):
         self.timing = brica.Timing(4, 1, 0)
         self.saliency_accumulators = []
+        self.error_accumulators = []
         self.cursor_accumulators = []
         cursor_template = load_image("data/debug_cursor_template_w.png")
 
@@ -152,6 +153,10 @@ class FEF(object):
                 # accumulators shape (GRID_DIVISION**2, ) * 2
                 saliency_accumulator = SaliencyAccumulator(pixel_x, pixel_y, ex, ey)
                 self.saliency_accumulators.append(saliency_accumulator)
+
+                # vae error accumulator
+                error_accumulator = SaliencyAccumulator(pixel_x, pixel_y, ex, ey)
+                self.error_accumulators.append(error_accumulator)
 
                 # TODO: want to remove this!
                 cursor_accumulator = CursorAccumulator(pixel_x, pixel_y, ex, ey,
@@ -172,7 +177,7 @@ class FEF(object):
         if 'from_bg' not in inputs:
             raise Exception('FEF did not recieve from BG')
 
-        phase = inputs['from_pfc']
+        phase, task = inputs['from_pfc']
         saliency_map, optical_flow = inputs['from_lip']
         retina_image, pixel_errors, top_errors = inputs['from_vc']
 
@@ -185,6 +190,9 @@ class FEF(object):
         else:
             for saliency_accumulator in self.saliency_accumulators:
                 saliency_accumulator.process(saliency_map)
+            for error_accumulator in self.error_accumulators:
+                # accumulate current task error
+                error_accumulator.process(top_errors[task])
 
         # discount accumulator
         # TODO: discount after collecting outputs?
@@ -192,6 +200,8 @@ class FEF(object):
             saliency_accumulator.post_process()
         for cursor_accumulator in self.cursor_accumulators:
             cursor_accumulator.post_process()
+        for error_accumulator in self.error_accumulators:
+            error_accumulator.post_process()
 
         # collect all outputs
         output = self._collect_output()
@@ -209,4 +219,6 @@ class FEF(object):
             output.append(saliency_accumulator.output)
         for cursor_accumulator in self.cursor_accumulators:
             output.append(cursor_accumulator.output)
+        for error_accumulator in self.error_accumulators:
+            output.append(error_accumulator.output)
         return np.array(output, dtype=np.float32)

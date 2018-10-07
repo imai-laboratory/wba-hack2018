@@ -235,7 +235,6 @@ class Inspector(object):
         bottom = 980
         left = 8 - width
         for i, (key, error) in enumerate(pixel_errors.items()):
-            error = np.array(error) * 10000.0
             error = np.reshape(error, list(error.shape) + [1])
             error = np.tile(error, [1, 1, 3])
             error = np.array(error, dtype=np.uint8)

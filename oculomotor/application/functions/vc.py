@@ -1,4 +1,5 @@
 import brica
+import cv2
 import scipy as sp
 import numpy as np
 import tensorflow as tf
@@ -113,10 +114,13 @@ class VC(object):
                     # flatten channel
                     channel_mean_top_error = top_error.mean(-1)
                     flatten_mean_error = np.reshape(channel_mean_top_error, [-1])
-                    flatten_mean_error[flatten_mean_error > 0] = softmax(
-                        flatten_mean_error[flatten_mean_error > 0])
+                    flatten_mean_error[flatten_mean_error > 0] = softmax(flatten_mean_error[flatten_mean_error > 0])
+                    flatten_mean_error *= 1.0 / (np.max(flatten_mean_error) + 1e-5)
+                    flatten_mean_error[np.isnan(flatten_mean_error)] = 0.0
                     top_error = np.reshape(flatten_mean_error, pixel_error.shape[:-1])
-                    top_errors[name] = top_error
+                    top_error = np.array(top_error * 255.0, dtype=np.uint8)
+                    top_error = cv2.resize(top_error, (128, 128))
+                    top_errors[name] = np.array(top_error, dtype=np.float32)
 
             processed_images = (retina_image, pixel_errors, top_errors)
             self.last_vae_reconstruction = images

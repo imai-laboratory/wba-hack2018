@@ -122,5 +122,5 @@ class PFC(object):
         else:
             fef_message = 1
 
-        return dict(to_fef=fef_message,
+        return dict(to_fef=(fef_message, current_task),
                     to_bg=(bg_message, bg_findcursor, current_task))
