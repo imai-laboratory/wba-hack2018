@@ -90,7 +90,7 @@ def train(content, step_size, logger, model_name, use_ppo_models):
         episode_reward += reward
 
         # TODO: remove this
-        done = done or i % 100 == 0
+        done = done or i % 180 == 0
 
         if done:
             obs = env.reset()
