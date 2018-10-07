@@ -27,7 +27,7 @@ DARK_GRAY = (64, 64, 64)
 
 
 class Inspector(object):
-    def __init__(self, content, display_size, model_name='1006-1538806261.ckpt'):
+    def __init__(self, content, display_size, model_name='1006-1538806261.ckpt', use_ppo_models=False):
         pygame.init()
 
         self.surface = pygame.display.set_mode(display_size, 0, 24)
@@ -38,7 +38,7 @@ class Inspector(object):
         self.vc = VC()
         self.pfc = PFC()
         self.fef = FEF()
-        self.bg = BG(model_name=model_name)
+        self.bg = BG(model_name=model_name, use_saved_models=use_ppo_models)
         self.sc = SC()
         self.hp = HP()
         self.cb = CB()

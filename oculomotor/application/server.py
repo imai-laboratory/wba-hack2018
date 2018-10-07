@@ -36,6 +36,7 @@ display_size = (128 * 4 + 16, 1500)
 parser = argparse.ArgumentParser()
 parser.add_argument("--model_name", help="Model name", default=None)
 parser.add_argument("--content", type=int, help="Model name", default=0)
+parser.add_argument("--use-ppo-models", action='store_true', help="use saved ppo")
 args = parser.parse_args()
 
 
@@ -55,7 +56,8 @@ class Runner(object):
         self.difficulty = -1
         self.inspector = Inspector(
             self.contents[args.content](-1), display_size,
-            model_name=args.model_name
+            model_name=args.model_name,
+            use_ppo_models=args.use_ppo_models
         )
         self.lock = Lock()
 
