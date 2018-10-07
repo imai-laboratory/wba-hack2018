@@ -233,6 +233,7 @@ class FEF(object):
                 cursor_accumulator.process(retina_image)
         else:
             for saliency_accumulator in self.saliency_accumulators:
+                # decrease basic saliency to prioritize vae saliency
                 saliency_accumulator.process(saliency_map / 2.0)
             for error_accumulator in self.error_accumulators:
                 # accumulate current task error
