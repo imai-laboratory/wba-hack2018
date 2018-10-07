@@ -155,7 +155,7 @@ class FEF(object):
                 self.saliency_accumulators.append(saliency_accumulator)
 
                 cursor_accumulator = CursorAccumulator(pixel_x, pixel_y, ex, ey, cursor_template)
-                self,cursor_accumulators.append(cursor_accumulator)
+                self.cursor_accumulators.append(cursor_accumulator)
                 
                 # vae error accumulator
                 error_accumulator = SaliencyAccumulator(pixel_x, pixel_y, ex, ey)
