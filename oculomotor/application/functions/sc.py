@@ -46,7 +46,6 @@ class SC(object):
         assert(len(fef_data) == len(bg_data))
 
         count = 0
-        EX_SCALE = 2
 
 
         # Calculate average eye ex, ey with has likelihoods over
