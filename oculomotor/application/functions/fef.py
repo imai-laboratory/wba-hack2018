@@ -215,10 +215,16 @@ class FEF(object):
 
         # task (string)
         phase, task = inputs['from_pfc']
-        saliency_map, opticalxflow, opticalyflow = inputs['from_lip']
+        saliency_map, optical_flow = inputs['from_lip']
         # latents.values().shape: (6, 8)
         retina_image, pixel_errors, top_errors, dc_latents = inputs['from_vc']
 
+        opticalxflow = optical_flow[32:97,32:97, 0]
+        opticalyflow = optical_flow[32:97,32:97, 1]
+
+        opticalxflow = cv2.resize(opticalxflow, (8, 8))
+        opticalyflow = cv2.resize(opticalyflow, (8, 8))
+        
         # TODO: 領野をまたいだ共通phaseをどう定義するか？
         # Update accumulator
         # phase == 0 finding cursor
@@ -259,9 +265,16 @@ class FEF(object):
         output = self._collect_output()
 
         # opticalxflow (8, 8, 1), opticalyflow (8, 8, 1)
-        output.append(opticalxflow)
-        output.append(opticalyflow)
-        
+        # output.append(opticalxflow)
+        # output.append(opticalyflow)
+        # output is not list
+
+        # TODO: change shape output
+#        output.append(np.expand_dims(opticalxflow.reshape(-1), axis=1))
+#        output.append(np.expand_dims(opticalyflow.reshape(-1), axis=1))
+#        output = np.array(output, dtype=np.float32)
+
+
         # TODO: pass feature extracted to bg?
         # NOTE: do not change the output size of to_sc (=action space of BG)
         return dict(to_pfc=None,
@@ -280,8 +293,8 @@ class FEF(object):
 #            output.append(opticalxflow_accumulator.output)
 #        for opticalyflow_accumulator in self.opticalyflow_accumulators:
 #            output.append(opticalyflow_accumulator.output)
-
+ 
         for error_accumulator in self.error_accumulators:
             output.append(error_accumulator.output)
 
-        return np.array(output, dtype=np.float32)
+        return output

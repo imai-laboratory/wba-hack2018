@@ -101,19 +101,12 @@ class LIP(object):
             # Calculate optical flow with saliency map
             optical_flow = self.optical_flow.process(saliency_map,
                                                      is_saliency_map=True)
-        
+
         # Store saliency map for debug visualizer
         self.last_saliency_map = saliency_map
-        
         self.last_optical_flow = optical_flow
 
-        opticalxflow = optical_flow[32:97,32:97, 0]        
-        opticalyflow = optical_flow[32:97,32:97, 1]
-
-        opticalxflow = cv2.resize(opticalxflow, (8, 8))
-        opticalyflow = cv2.resize(opticalyflow, (8, 8))
-        
-        return dict(to_fef=(saliency_map, opticalxflow, opticalyflow))
+        return dict(to_fef=(saliency_map, optical_flow))
 
     def _get_saliency_magnitude(self, image):
         # Calculate FFT
