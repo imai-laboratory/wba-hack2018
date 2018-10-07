@@ -33,7 +33,7 @@ $ build-gpu.sh or build-cpu.sh
 #### Edit the files under `application/functions` as you like
 
 ### Train beta-VAE
-First of all, dataset gathered by `../data/gen.py`.
+First of all, dataset gathered by `../data/gen.py` has to be downloaded.
 ```
 $ ./download_data.sh <id> <file name>
 # id list
