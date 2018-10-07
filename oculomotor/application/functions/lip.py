@@ -57,10 +57,12 @@ class OpticalFlow(object):
             diff_angle = np.array(angle) - np.array(self.last_angle)
             self.angle_flow = (2 * (1 - np.cos(diff_angle[0])), 2 * (1 - np.cos(diff_angle[1])))
             # (2, 2)
+
+            # print(self.flow, self.angle_flow)
             
-            self.flow[..., 0] = self.flow[..., 0] - self.angle_flow[0] * 5000 # hyper parameter
-            self.flow[..., 1] = self.flow[..., 1] - self.angle_flow[1] * 5000 # hyper parameter
-            
+            self.flow[..., 0] = self.flow[..., 0] - self.angle_flow[0] * 1000 # hyper parameter
+            self.flow[..., 1] = self.flow[..., 1] - self.angle_flow[1] * 500 # hyper parameter
+                
         self.last_gray_image = gray_image
         self.last_angle = angle
         
@@ -104,8 +106,14 @@ class LIP(object):
         self.last_saliency_map = saliency_map
         
         self.last_optical_flow = optical_flow
+
+        opticalxflow = optical_flow[32:97,32:97, 0]        
+        opticalyflow = optical_flow[32:97,32:97, 1]
+
+        opticalxflow = cv2.resize(opticalxflow, (8, 8))
+        opticalyflow = cv2.resize(opticalyflow, (8, 8))
         
-        return dict(to_fef=(saliency_map, optical_flow))
+        return dict(to_fef=(saliency_map, opticalxflow, opticalyflow))
 
     def _get_saliency_magnitude(self, image):
         # Calculate FFT

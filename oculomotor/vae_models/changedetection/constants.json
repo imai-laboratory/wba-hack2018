@@ -1,1 +1,1 @@
-{"IMAGE_SIZE": [64, 64, 3], "BETA": 10.0, "CONVS": [[3, 32, 4, 2], [32, 32, 4, 2], [32, 64, 4, 2], [64, 64, 4, 2]], "KEEP_PROB": 1.0, "ACTIVATION": "relu", "BATCH_SIZE": 128, "LATENT_SIZE": 8, "EPOCH": 100, "FCS": [256], "LR": 0.0001}
+{"LATENT_SIZE": 8, "BETA": 5.0, "ACTIVATION": "relu", "KEEP_PROB": 1.0, "EPOCH": 400, "LR": 0.0001, "CONVS": [[3, 32, 4, 2], [32, 32, 4, 2], [32, 64, 4, 2], [64, 64, 4, 2]], "IMAGE_SIZE": [64, 64, 3], "BATCH_SIZE": 128, "FCS": [256]}

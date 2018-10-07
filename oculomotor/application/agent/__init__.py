@@ -71,6 +71,8 @@ class Agent(object):
         ('bg', 'sc'),
         ('cb', 'environment'), # offset=5
         ('sc', 'environment'), # offset=6
+        ('vc', 'hp'),  # added by smatsumori
+        ('hp', 'bg'),  # added by smatsumori
     ]
 
     def __init__(self, retina, lip, vc, pfc, fef, bg, sc, hp, cb):

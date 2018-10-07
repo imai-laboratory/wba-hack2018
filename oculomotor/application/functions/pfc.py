@@ -4,7 +4,7 @@ import numpy as np
 
 import brica
 from .utils import load_image
-from .vc import model_paths
+from .constants import MODEL_PATHS
 
 """
 This is a sample implemention of PFC (Prefrontal cortex) module.
@@ -63,7 +63,7 @@ class PFC(object):
 
         self.cursor_find_accmulator = CursorFindAccumulator()
         self.vae_error_accumulators = {}
-        for name in model_paths.keys():
+        for name in MODEL_PATHS.keys():
             self.vae_error_accumulators[name]= Accumulator()
 
         self.phase = Phase.INIT
@@ -122,5 +122,5 @@ class PFC(object):
         else:
             fef_message = 1
 
-        return dict(to_fef=fef_message,
+        return dict(to_fef=(fef_message, current_task),
                     to_bg=(bg_message, bg_findcursor, current_task))
