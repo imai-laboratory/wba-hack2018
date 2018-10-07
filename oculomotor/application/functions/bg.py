@@ -105,8 +105,9 @@ class BG(object):
             buf[current_task] for buf in hp_data
         ]
 
-        # TODO(->smatsumori): selecet episodes from current tasks
-        reward, done = inputs['from_environment'][0], inputs['from_environment'][1]
+        # get a rewad and messages from environment
+        reward = inputs['from_environment'][0]
+        done = inputs['from_environment'][1]
 
         # default FEF shape.(128, 3) -> (64, 3)
         # psudo action space (can we pass images or features?)
