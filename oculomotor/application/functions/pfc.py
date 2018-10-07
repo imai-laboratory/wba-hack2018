@@ -4,7 +4,9 @@ import numpy as np
 
 import brica
 from .utils import load_image
+from .utils import softmax
 from .constants import MODEL_PATHS
+from collections import OrderedDict
 
 """
 This is a sample implemention of PFC (Prefrontal cortex) module.
@@ -42,6 +44,20 @@ class CursorFindAccumulator(object):
         # Decay likelihood
         self.likelihood *= self.decay_rate
 
+# Accumulator Based Arbitration Model
+class Abam:
+    def __init__(self, size, decay_rate=0.9):
+        self.values = np.zeros((size), dtype=np.float32)
+        self.decay_rate = decay_rate
+
+    def accumulate(self, values):
+        max_index = np.argmax(values)
+        self.values *= self.decay_rate
+        self.values[max_index] += 1.0
+
+    def output(self):
+        return np.max(self.values)
+
 class Accumulator:
     def __init__(self, decay_rate=0.9):
         self.decay_rate = decay_rate
@@ -61,6 +77,7 @@ class PFC(object):
     def __init__(self):
         self.timing = brica.Timing(3, 1, 0)
 
+        self.vae_cursor_accumulator = Abam(len(MODEL_PATHS.keys()))
         self.cursor_find_accmulator = CursorFindAccumulator()
         self.vae_error_accumulators = {}
         for name in MODEL_PATHS.keys():
@@ -92,27 +109,32 @@ class PFC(object):
         bg_message = 0
         bg_findcursor = 0
 
+        # accumulate reconstruction error
+        errors = OrderedDict()
+        for name in MODEL_PATHS.keys():
+            pixel_error = pixel_errors[name]
+            errors[name] = pixel_error.mean(-1).mean(-1).mean(-1)
+        sorted_errors = OrderedDict()
+        for k, v in sorted(errors.items(), key=lambda x: x[0]):
+            sorted_errors[k] = v
+        self.vae_cursor_accumulator.accumulate(10*-np.array(list(sorted_errors.values())))
+        current_task = list(pixel_errors.keys())[np.argmin(list(errors.values()))]
+        self.last_current_task = current_task
+
         if self.phase == Phase.INIT:
-            if self.cursor_find_accmulator.likelihood > 0.7:
+            if self.vae_cursor_accumulator.output() < 8.5:
                 self.phase = Phase.START
                 bg_message = 1
                 bg_findcursor = 1
         elif self.phase == Phase.START:
-            if self.cursor_find_accmulator.likelihood < 0.4:
+            if self.vae_cursor_accumulator.output() > 8.5:
                 self.phase = Phase.TARGET
                 bg_message = 1
             else:
                 bg_findcursor = 1
         else:
-            if self.cursor_find_accmulator.likelihood > 0.6:
+            if self.vae_cursor_accumulator.output() < 8.5:
                 self.phase = Phase.START
-
-        # accumulate reconstruction error
-        errors = []
-        for name, pixel_error in pixel_errors.items():
-            errors.append(pixel_error.mean(-1).mean(-1).mean(-1))
-        current_task = list(pixel_errors.keys())[np.argmin(errors)]
-        self.last_current_task = current_task
 
         # TODO: update fef_message signal
         if self.phase == Phase.INIT or self.phase == Phase.START:

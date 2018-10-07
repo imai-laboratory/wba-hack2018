@@ -6,13 +6,9 @@ import tensorflow as tf
 from .vae.train import build
 from .vae import constants
 from .constants import MODEL_PATHS
+from .utils import softmax
 from collections import OrderedDict
 # from tensorflow import keras as K
-
-def softmax(values, temp=0.1):
-    values /= temp
-    e_x = np.exp(values - np.max(values))
-    return e_x / e_x.sum(axis=0)
 
 
 class VC(object):
@@ -125,7 +121,7 @@ class VC(object):
                     top_error = cv2.resize(top_error, (128, 128))
 
                     top_errors[name] = np.array(top_error, dtype=np.float32) / 255.0
-                    dc_latents[name] = latent
+                    dc_latents[name] = latent[0]
 
             to_fef = (retina_image, pixel_errors, top_errors, dc_latents)
             to_pfc = (retina_image, pixel_errors, top_errors)
