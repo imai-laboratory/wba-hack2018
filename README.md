@@ -7,6 +7,10 @@
 
 ## Create Datasets
 ### OddOneOut (example)
+See `oculomotor` for the hackathon architecture.
+
+## 訓練データ作成方法
+### OddOneOut
 ```bash
 cd data
 python oddoneoutgen.py --episode=<int> --length=<int> --scene=<int>

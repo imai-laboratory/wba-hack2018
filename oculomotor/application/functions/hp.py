@@ -51,7 +51,7 @@ class HP(object):
             # latents_buffer.shape:(7, 6, 8)
             self.latents_buffer.appendleft(latents)
 
-        return dict(to_pfc=self.map_image, to_bg=self.latents_buffer)
+        return dict(to_bg=self.latents_buffer)
 
     def _get_perspective_mat(self, fovy, aspect_ratio, znear, zfar):
         ymax = znear * math.tan(fovy * math.pi / 360.0)
