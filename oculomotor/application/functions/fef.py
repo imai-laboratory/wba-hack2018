@@ -172,9 +172,10 @@ class FEF(object):
         if 'from_bg' not in inputs:
             raise Exception('FEF did not recieve from BG')
 
-        phase = inputs['from_pfc']
+        phase, current_task = inputs['from_pfc']
         saliency_map, optical_flow = inputs['from_lip']
-        retina_image, pixel_errors, top_errors = inputs['from_vc']
+        # latents.shape: (6, 8)
+        retina_image, pixel_errors, top_errors, latents = inputs['from_vc']
 
         # TODO: 領野をまたいだ共通phaseをどう定義するか？
         # Update accumulator
