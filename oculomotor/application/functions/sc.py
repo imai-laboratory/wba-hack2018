@@ -32,7 +32,7 @@ class SC(object):
             np.concatenate((np.tile([bg_in[2]], 4), np.tile([bg_in[3]], 4)), axis=0), 4
         )
         bg_1234 = np.concatenate((bg_12, bg_34), axis=0)
-        bg_data = np.tile(bg_1234, 2).tolist()
+        bg_data = np.tile(bg_1234, 3).tolist()
 
         action = self._decide_action(fef_data, bg_data)
         # Store FEF data for debug visualizer
@@ -46,7 +46,6 @@ class SC(object):
         assert(len(fef_data) == len(bg_data))
 
         count = 0
-        EX_SCALE = 2
 
 
         # Calculate average eye ex, ey with has likelihoods over

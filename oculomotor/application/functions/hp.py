@@ -3,35 +3,55 @@ import numpy as np
 import cv2
 import math
 from oculoenv.geom import Matrix4
+from collections import deque
+from .constants import MODEL_PATHS
+
 
 class HP(object):
     """ Hippocampal formation module.
-
-    Create allocentric panel image.
+    We have two basic functions here.
+        1. Create allocentric panel image. (not using this feature)
+        2. Working meomry
+            The working memory keeps the latest
+            7 extracted features (latent parameters) in the FIFO style memory.
+            This module enables to embed timer series features in BG.
     """
-    
+
     def __init__(self):
         self.timing = brica.Timing(2, 1, 0)
 
         # Allocantric panel map image
         self.map_image = np.zeros((128, 128, 3), dtype=np.uint8)
-        
+
+        # buffer for latents (7, 6, 8) (buffer_len, tasks, features)
+        lat_buffers = {k: np.zeros(8) for k in MODEL_PATHS.keys()}
+        self.latents_buffer = deque([lat_buffers] * 7)
+
     def __call__(self, inputs):
         if 'from_retina' not in inputs:
             raise Exception('HP did not recieve from Environment')
-
-        # This image input from environment is a kind of cheat and not biologically
-        # acculate.
+        if 'from_vc' not in inputs:
+            raise Exception('HP did not recieve from VC')
+        # NOTE: we are not using this function
+        # This image input from environment is
+        # a kind of cheat and not biologically acculate.
         if inputs['from_retina'] is not None:
             image, angle = inputs['from_retina'] # (128, 128, 3), (2)
-
             # Transform input image into allocentric panel image
             transforemed_image = self._extract_transformed_image(image, angle)
-
             # Overlay into existing map image
             self._overlay_extracted_image(self.map_image, transforemed_image)
-        
-        return dict(to_pfc=self.map_image)
+
+        # WORKING MEMORY
+        # get latents from visual cortex and append in a buffer (length 7)
+        if inputs['from_vc'] is not None:
+            self.latents_buffer.pop()
+            latents = inputs['from_vc'] # (6, 8)
+
+            # latents_buffer.shape:(7, 6, 8)
+            self.latents_buffer.appendleft(latents)
+
+        return dict(to_bg=self.latents_buffer)
 
     def _get_perspective_mat(self, fovy, aspect_ratio, znear, zfar):
         ymax = znear * math.tan(fovy * math.pi / 360.0)
@@ -41,7 +61,7 @@ class HP(object):
         t2 = 2.0 * xmax
         t3 = 2.0 * ymax
         t4 = zfar - znear
-    
+
         m = [[t/t2,  0.0,              0.0, 0.0],
              [0.0,  t/t3,              0.0, 0.0],
              [0.0,   0.0, (-zfar-znear)/t4, -1.0],
@@ -54,12 +74,9 @@ class HP(object):
         # In order to use black color as a blank mask, set lower clip value for
         # input image
         mask_threshold = 3
-    
         image = np.clip(image, mask_threshold, 255)
-    
         angle_h = angle[0]
         angle_v = angle[1]
-    
         m0 = Matrix4()
         m1 = Matrix4()
         m0.set_rot_x(angle_v)
@@ -71,9 +88,9 @@ class HP(object):
         pers_mat = self._get_perspective_mat(camera_fovy, 1.0, 0.04, 100.0)
 
         mat = pers_mat.mul(camera_mat_inv)
-    
+
         plane_distance = 3.0
-        
+
         point_srcs = [[ 1.0, 1.0, -plane_distance, 1.0],
                       [-1.0, 1.0, -plane_distance, 1.0],
                       [-1.0,-1.0, -plane_distance, 1.0],
@@ -81,12 +98,12 @@ class HP(object):
 
         point_src_2ds = []
         point_dst_2ds = []
-    
+
         for point_src in point_srcs:
             ps_x = (point_src[0] * 0.5 + 0.5) * 127.0
             ps_y = (-point_src[1] * 0.5 + 0.5) * 127.0
             point_src_2ds.append([ps_x, ps_y])
-        
+
             p = mat.transform(np.array(point_src, dtype=np.float32))
             w = p[3]
             x = p[0]/w
@@ -107,7 +124,7 @@ class HP(object):
     def _overlay_extracted_image(self, base_image, ext_image):
         GRID_DIVISION = 8
         GRID_WIDTH = 128 // GRID_DIVISION
-    
+
         for ix in range(GRID_DIVISION):
             pixel_x = GRID_WIDTH * ix
             for iy in range(GRID_DIVISION):
