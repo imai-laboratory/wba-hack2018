@@ -107,11 +107,13 @@ class VC(object):
                 flatten_mean_error *= 1.0 / (np.max(flatten_mean_error) + 1e-5)
                 flatten_mean_error[np.isnan(flatten_mean_error)] = 0.0
                 # reshape to (64, 64)
-                top_error = np.reshape(flatten_mean_error, pixel_error.shape[:-1])
+                top_error = np.reshape(
+                    flatten_mean_error, pixel_error.shape[:-1])
                 # multiply 255 to correctly resize error as an image
                 top_error = np.array(top_error * 255.0, dtype=np.uint8)
                 top_error = cv2.resize(top_error, (128, 128))
-                top_errors[name] = np.array(top_error, dtype=np.float32) / 255.0
+                top_error = np.array(top_error, dtype=np.float32) / 255.0
+                top_errors[name] = top_error
 
                 dc_latents[name] = latent[0]
 
@@ -121,8 +123,6 @@ class VC(object):
             self.last_vae_reconstruction = images
             self.last_vae_top_errors = top_errors
 
-        # Current implementation just passes through input retina image to FEF and PFC.
-        # TODO: change pfc fef
         return dict(to_fef=to_fef, to_pfc=to_pfc, to_hp=to_hp)
 
     # aggregate function to infere in a single sesion.run
