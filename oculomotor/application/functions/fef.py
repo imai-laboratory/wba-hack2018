@@ -192,7 +192,7 @@ class FEF(object):
                 saliency_accumulator.process(saliency_map)
             for error_accumulator in self.error_accumulators:
                 # accumulate current task error
-                error_accumulator.process(top_errors[task])
+                error_accumulator.process(top_errors[task] * 10.0)
 
         # discount accumulator
         # TODO: discount after collecting outputs?

@@ -176,6 +176,7 @@ class Inspector(object):
                               bottom + 8)
 
     def show_fef_data_bars(self, fef_data):
+        fef_data = list(fef_data[:64]) + list(fef_data[128:])
         fef_data_len = len(fef_data)
 
         bottom = 256 + 16

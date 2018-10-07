@@ -8,7 +8,8 @@ from .vae import constants
 from collections import OrderedDict
 # from tensorflow import keras as K
 
-def softmax(values):
+def softmax(values, temp=0.1):
+    values /= temp
     e_x = np.exp(values - np.max(values))
     return e_x / e_x.sum(axis=0)
 
