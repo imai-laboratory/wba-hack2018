@@ -229,6 +229,22 @@ class Inspector(object):
     def show_current_task(self, task):
         self.draw_text("PFC task: {}".format(task), 24, 950)
 
+    def show_vae_errors(self, pixel_errors):
+        data_len = len(pixel_errors)
+        width = 128.0
+        bottom = 980
+        left = 8 - width
+        for i, (key, error) in enumerate(pixel_errors.items()):
+            error = np.array(error) * 255.0
+            error = np.array(error, dtype=np.uint8)
+            error = cv2.resize(error, (128, 128))
+            error = np.ascontiguousarray(error, dtype=np.uint8)
+            left += width
+            if i == 4:
+                left = 8
+                bottom = 1140
+            self.show_image(error, left, bottom, "error:" + key)
+
     def show_grid(self, data, offset, grid_division, grid_width, left, top,
                   label):
         index = 0
@@ -298,6 +314,9 @@ class Inspector(object):
         
         if self.pfc.last_current_task is not None:
             self.show_current_task(self.pfc.last_current_task)
+
+        if self.vc.last_vae_top_errors is not None:
+            self.show_vae_errors(self.vc.last_vae_top_errors)
 
         self.last_image = image
         self.last_angle = angle

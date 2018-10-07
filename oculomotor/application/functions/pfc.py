@@ -70,7 +70,6 @@ class PFC(object):
         self.prev_phase = self.phase
         self.last_current_task = None
 
-
     def __call__(self, inputs):
         if 'from_vc' not in inputs:
             raise Exception('PFC did not recieve from VC')
@@ -82,7 +81,7 @@ class PFC(object):
             raise Exception('PFC did not recieve from HP')
 
         # Image from Visual cortex module.
-        retina_image, pixel_errors = inputs['from_vc']
+        retina_image, pixel_errors, top_errors = inputs['from_vc']
         # Allocentrix map image from hippocampal formatin module.
         map_image = inputs['from_hp']
 
