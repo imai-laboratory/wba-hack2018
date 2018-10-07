@@ -199,7 +199,6 @@ class FEF(object):
         # select latents according to tasks
         # to_bg_latent.shape: (1, 8)
         to_bg_latent = dc_latents[task]
-        print('hoge', to_bg_latent)
 
         # discount accumulator
         # TODO: discount after collecting outputs?
