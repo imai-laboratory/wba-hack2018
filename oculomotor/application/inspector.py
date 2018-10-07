@@ -277,7 +277,7 @@ class Inspector(object):
         self.episode_reward += reward
 
         # TODO: remove this
-        done = done  or self.step % 100 == 0
+        done = done  or self.step % 180 == 0
 
         if done:
             obs = self.env.reset()
