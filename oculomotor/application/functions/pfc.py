@@ -18,38 +18,16 @@ class Phase(object):
     START = 0  # Start phase while finding red cross cursor
     TARGET = 1 # Target finding phsae
 
-
-class CursorFindAccumulator(object):
-    def __init__(self, decay_rate=0.9):
-        # Accumulated likelilood
-        self.decay_rate = decay_rate
-        self.likelihood = 0.0
-
-        self.cursor_template = load_image("data/debug_cursor_template_w.png")
-
-    def accumulate(self, value):
-        self.likelihood += value
-        self.likelihood = np.clip(self.likelihood, 0.0, 1.0)
-
-    def reset(self):
-        self.likelihood = 0.0
-
-    def process(self, retina_image):
-        match = cv2.matchTemplate(retina_image, self.cursor_template,
-                                  cv2.TM_CCOEFF_NORMED)
-        match_rate = np.max(match)
-        self.accumulate(match_rate * 0.1)
-
-    def post_process(self):
-        # Decay likelihood
-        self.likelihood *= self.decay_rate
-
 # Accumulator Based Arbitration Model
+# https://link.springer.com/chapter/10.1007/978-3-319-70087-8_63
+# we proposed arbitration model based on prefrontal cortex
 class Abam:
     def __init__(self, size, decay_rate=0.9):
         self.values = np.zeros((size), dtype=np.float32)
         self.decay_rate = decay_rate
 
+    # accumulate max value
+    # others are discounted
     def accumulate(self, values):
         max_index = np.argmax(values)
         self.values *= self.decay_rate
@@ -78,7 +56,8 @@ class PFC(object):
         self.timing = brica.Timing(3, 1, 0)
 
         self.vae_cursor_accumulator = Abam(len(MODEL_PATHS.keys()))
-        self.cursor_find_accmulator = CursorFindAccumulator()
+        # replace cursor_find_accmulator with vae error accumulator
+        # if vae is not consistently reliable, the scene is finding cursor
         self.vae_error_accumulators = {}
         for name in MODEL_PATHS.keys():
             self.vae_error_accumulators[name]= Accumulator()
@@ -94,33 +73,32 @@ class PFC(object):
             raise Exception('PFC did not recieve from FEF')
         if 'from_bg' not in inputs:
             raise Exception('PFC did not recieve from BG')
-        if 'from_hp' not in inputs:
-            raise Exception('PFC did not recieve from HP')
 
         # Image from Visual cortex module.
         retina_image, pixel_errors, top_errors = inputs['from_vc']
-        # Allocentrix map image from hippocampal formatin module.
-        map_image = inputs['from_hp']
 
-        # This is a very sample implementation of phase detection.
-        # You should change here as you like.
-        self.cursor_find_accmulator.process(retina_image)
-        self.cursor_find_accmulator.post_process()
         bg_message = 0
         bg_findcursor = 0
 
         # accumulate reconstruction error
         errors = OrderedDict()
-        for name in MODEL_PATHS.keys():
+        names = list(MODEL_PATHS.keys())
+        for name in names:
             pixel_error = pixel_errors[name]
+            # scalar mean value
             errors[name] = pixel_error.mean(-1).mean(-1).mean(-1)
+        # sort keys because dictionary is not consistently ordered
         sorted_errors = OrderedDict()
         for k, v in sorted(errors.items(), key=lambda x: x[0]):
             sorted_errors[k] = v
-        self.vae_cursor_accumulator.accumulate(10*-np.array(list(sorted_errors.values())))
-        current_task = list(pixel_errors.keys())[np.argmin(list(errors.values()))]
+        # negate errors to accumulate most reliable one
+        self.vae_cursor_accumulator.accumulate(
+            -np.array(list(sorted_errors.values())))
+        # current task according to most reliable vae
+        current_task = names[np.argmin(list(errors.values()))]
         self.last_current_task = current_task
 
+        # 8.5 is hyperparameter of threshold
         if self.phase == Phase.INIT:
             if self.vae_cursor_accumulator.output() < 8.5:
                 self.phase = Phase.START
@@ -136,13 +114,10 @@ class PFC(object):
             if self.vae_cursor_accumulator.output() < 8.5:
                 self.phase = Phase.START
 
-        # TODO: update fef_message signal
         if self.phase == Phase.INIT or self.phase == Phase.START:
-            # TODO: 領野をまたいだ共通phaseをどう定義するか？
-            # original 0
             fef_message = 0
         else:
             fef_message = 1
 
         return dict(to_fef=(fef_message, current_task),
-                    to_bg=(bg_message, bg_findcursor, current_task))
+                    to_bg=(bg_message, current_task))

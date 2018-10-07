@@ -58,7 +58,6 @@ class Agent(object):
         ('retina', 'hp'),
         ('lip', 'fef'), # offset=2
         ('vc', 'pfc'), # offset=2
-        ('hp', 'pfc'), # offset=2
         ('vc', 'fef'),
         ('pfc', 'fef'), # offset=3
         ('pfc', 'bg'),

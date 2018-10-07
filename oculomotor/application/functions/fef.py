@@ -128,7 +128,7 @@ class CursorAccumulator(ActionAccumulator):
         red_max = np.array([255, 100, 100], np.uint8)
         region_image_red = cv2.inRange(region_image, red_min, red_max)
         match = np.mean(region_image_red)
-
+        
         # Find the maximum match value
         self.accumulate(match * CURSOR_MATCH_COEFF)
         self.expose()
@@ -237,7 +237,8 @@ class FEF(object):
                 cursor_accumulator.process(retina_image)
         else:
             for saliency_accumulator in self.saliency_accumulators:
-                saliency_accumulator.process(saliency_map)
+                # decrease basic saliency to prioritize vae saliency
+                saliency_accumulator.process(saliency_map / 2.0)
             for error_accumulator in self.error_accumulators:
                 # accumulate current task error
                 error_accumulator.process(top_errors[task] * 5.0)
@@ -270,11 +271,11 @@ class FEF(object):
         for background_accumulator in self.background_accumulators:
             background_accumulator.post_process()
 
-        # collect all outputs (nx64, 3) -> (n, 64) -> (n, 8, 8)?
+        # collect all outputs (Nx64, 3) -> (n, 64) -> (n, 8, 8)
+        # where N is a features for bg input
         output = self._collect_output()
         reshaped_output = np.array(output).reshape(
             3, 64, 3)[:, :, 0].reshape(3, 8, 8).tolist()
-        # .transpose((1, 2, 0))
 
         # opticalxflow (8, 8, 1), opticalyflow (8, 8, 1)
         # output.append(opticalxflow)
@@ -286,9 +287,6 @@ class FEF(object):
 #        output.append(np.expand_dims(opticalyflow.reshape(-1), axis=1))
 #        output = np.array(output, dtype=np.float32)
 
-
-        # TODO: pass feature extracted to bg?
-        # NOTE: do not change the output size of to_sc (=action space of BG)
         return dict(to_pfc=None,
                     to_bg=(reshaped_output, to_bg_latent),
                     to_sc=output,
@@ -300,7 +298,7 @@ class FEF(object):
             output.append(saliency_accumulator.output)
         for cursor_accumulator in self.cursor_accumulators:
             output.append(cursor_accumulator.output)
-            
+
 #        for opticalxflow_accumulator in self.opticalxflow_accumulators:
 #            output.append(opticalxflow_accumulator.output)
 #        for opticalyflow_accumulator in self.opticalyflow_accumulators:
