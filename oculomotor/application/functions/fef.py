@@ -316,6 +316,7 @@ class FEF(object):
         if np.mean(background_output) > 0.3:
             background_output = np.zeros(background_output.shape)
         output[64:128][:,0] += background_output
-        output[64:128][:,0] = np.abs(output[64:128][:,0])
+        #output[64:128][:,0] = np.abs(output[64:128][:,0])
+        output[64:128][:,0] = np.clip(output[64:128][:,0], 0, 1)
 
         return output
