@@ -117,9 +117,10 @@ class BG(object):
         else:
             with self.sess.as_default():
                 # TODO(->seno): change order
-                saliency = np.array(fef_data)[64:][:,0]
-                old_saliency = saliency[:64].reshape(1, 8, 8, 1)
-                error_saliency = saliency[64:].reshape(1, 8, 8, 1)
+                old_saliency = np.array(fef_data)[64:128][:,0]
+                old_saliency = np.reshape(old_saliency, [1, 8, 8, 1])
+                error_saliency = np.array(fef_data)[128:][:,0]
+                error_saliency = np.reshape(error_saliency, [1, 8, 8, 1])
                 ppo_input = np.vstack([old_saliency, error_saliency])
                 ppo_input = np.transpose(ppo_input, [3, 1, 2, 0])
                 likelihood_thresholds = (self.agent.act(ppo_input, [reward], [done])[0] + 1.0) / 2.0
