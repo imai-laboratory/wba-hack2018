@@ -128,8 +128,33 @@ class CursorAccumulator(ActionAccumulator):
         red_max = np.array([255, 100, 100], np.uint8)
         region_image_red = cv2.inRange(region_image, red_min, red_max)
         match = np.mean(region_image_red)
-
+        
+        # Find the maximum match value
         self.accumulate(match * CURSOR_MATCH_COEFF)
+        self.expose()
+
+
+class BackgroundAccumulator(ActionAccumulator):
+    def __init__(self, pixel_x, pixel_y, ex, ey):
+        super(BackgroundAccumulator, self).__init__(ex, ey)
+        # Pixel x,y pos at left top corner of the region.
+        self.pixel_x = pixel_x
+        self.pixel_y = pixel_y
+
+    def process(self, retina_image):
+        # Crop region image (to the region)
+        region_image = retina_image[self.pixel_y:self.pixel_y+GRID_WIDTH,
+                                    self.pixel_x:self.pixel_x+GRID_WIDTH, :]
+
+        sky_min = np.array([152, 189, 211], np.uint8)
+        sky_max = np.array([192, 229, 255], np.uint8)
+        region_image_sky = cv2.inRange(region_image, sky_min, sky_max)
+        region_image_sky = region_image_sky / 255
+        region_image_sky = np.ones(region_image_sky.shape) - region_image_sky
+        match = np.mean(region_image_sky)
+
+        # Find the maximum match value
+        self.accumulate(match * 0.3)
         self.expose()
 
         
@@ -141,6 +166,7 @@ class FEF(object):
         self.saliency_accumulators = []
         self.error_accumulators = []
         self.cursor_accumulators = []
+        self.background_accumulators = []
         cursor_template = load_image("data/debug_cursor_template_w.png")
 
         # devide and create accumulators for each region
@@ -158,13 +184,17 @@ class FEF(object):
                 saliency_accumulator = SaliencyAccumulator(pixel_x, pixel_y, ex, ey)
                 self.saliency_accumulators.append(saliency_accumulator)
 
+                # cursor accumulater
                 cursor_accumulator = CursorAccumulator(pixel_x, pixel_y, ex, ey, cursor_template)
-                
+                self.cursor_accumulators.append(cursor_accumulator)
+
                 # vae error accumulator
                 error_accumulator = SaliencyAccumulator(pixel_x, pixel_y, ex, ey)
                 self.error_accumulators.append(error_accumulator)
 
-                self.cursor_accumulators.append(cursor_accumulator)
+                # background accumulator
+                background_accumulator = BackgroundAccumulator(pixel_x, pixel_y, ex, ey)
+                self.background_accumulators.append(background_accumulator)
 
         for _ in range(4 * 4):                
             opticalxflow_accumulator = OpticalXflowAccumulator(0, 0, 0, 0)
@@ -218,6 +248,9 @@ class FEF(object):
                 
             for opticalyflow_accumulator in self.opticalyflow_accumulators:
                 opticalyflow_accumulator.process(opticalyflow)
+
+            for background_accumulator in self.background_accumulators:
+                background_accumulator.process(retina_image)
                 
         # select latents according to tasks
         # to_bg_latent.shape: (1, 8)
@@ -235,6 +268,8 @@ class FEF(object):
             opticalyflow_accumulator.post_process()
         for error_accumulator in self.error_accumulators:
             error_accumulator.post_process()
+        for background_accumulator in self.background_accumulators:
+            background_accumulator.post_process()
 
         # collect all outputs (Nx64, 3) -> (n, 64) -> (n, 8, 8)
         # where N is a features for bg input
@@ -272,4 +307,13 @@ class FEF(object):
         for error_accumulator in self.error_accumulators:
             output.append(error_accumulator.output)
 
+        output = np.array(output)
+        background_output = []
+        for background_accumulator in self.background_accumulators:
+            background_output.append(background_accumulator.output[0])
+        background_output = np.array(background_output)
+        if np.mean(background_output) > 0.5:
+            background_output = np.zeros(background_output.shape)
+        output[64:128][:,0] = background_output
+        
         return output
