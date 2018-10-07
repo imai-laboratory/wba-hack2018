@@ -236,7 +236,7 @@ class FEF(object):
                 saliency_accumulator.process(saliency_map)
             for error_accumulator in self.error_accumulators:
                 # accumulate current task error
-                error_accumulator.process(top_errors[task])
+                error_accumulator.process(top_errors[task] * 5.0)
 
             for opticalxflow_accumulator in self.opticalxflow_accumulators:
                 opticalxflow_accumulator.process(opticalxflow)
