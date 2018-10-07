@@ -14,10 +14,8 @@ You can change this as you like.
 
 GRID_DIVISION = 8
 GRID_WIDTH = 128 // GRID_DIVISION
-GRID_OPTICAL_WIDTH = 64 // 4
 
 SALIENCY_COEFF = 0.3
-OPTICALFLOW_COEFF = 0.3
 CURSOR_MATCH_COEFF = 0.3
 
 
@@ -69,32 +67,6 @@ class ActionAccumulator(object):
         return [self.likelihood, self.ex, self.ey]
 
     
-class OpticalXflowAccumulator(ActionAccumulator):
-    def __init__(self, pixel_x, pixel_y, ex, ey):
-        super(OpticalXflowAccumulator, self).__init__(ex, ey, decay_rate=0.9)
-        self.pixel_x = pixel_x
-        self.pixel_y = pixel_y
-
-    def process(self, opticalflow_map):
-        region_opticalflow = opticalflow_map
-        average_opticalflow = np.mean(region_opticalflow)
-        self.accumulate(average_opticalflow * OPTICALFLOW_COEFF)
-        self.expose()
-
-
-class OpticalYflowAccumulator(ActionAccumulator):
-    def __init__(self, pixel_x, pixel_y, ex, ey):
-        super(OpticalYflowAccumulator, self).__init__(ex, ey, decay_rate=0.9)
-        self.pixel_x = pixel_x
-        self.pixel_y = pixel_y
-
-    def process(self, opticalflow_map):
-        region_opticalflow = opticalflow_map
-        average_opticalflow = np.mean(region_opticalflow)
-        self.accumulate(average_opticalflow * OPTICALFLOW_COEFF)
-        self.expose()
-
-        
 class SaliencyAccumulator(ActionAccumulator):
     def __init__(self, pixel_x, pixel_y, ex, ey):
         super(SaliencyAccumulator, self).__init__(ex, ey, decay_rate=0.85)
@@ -162,8 +134,6 @@ class CursorAccumulator(ActionAccumulator):
 class FEF(object):
     def __init__(self):
         self.timing = brica.Timing(4, 1, 0)
-        self.opticalxflow_accumulators = []
-        self.opticalyflow_accumulators = []
         self.saliency_accumulators = []
         self.error_accumulators = []
         self.cursor_accumulators = []
@@ -185,23 +155,11 @@ class FEF(object):
                 self.saliency_accumulators.append(saliency_accumulator)
 
                 cursor_accumulator = CursorAccumulator(pixel_x, pixel_y, ex, ey, cursor_template)
+                self,cursor_accumulators.append(cursor_accumulator)
                 
                 # vae error accumulator
                 error_accumulator = SaliencyAccumulator(pixel_x, pixel_y, ex, ey)
                 self.error_accumulators.append(error_accumulator)
-
-                self.cursor_accumulators.append(cursor_accumulator)
-
-        for _ in range(4 * 4):                
-            opticalxflow_accumulator = OpticalXflowAccumulator(0, 0, 0, 0)
-            self.opticalxflow_accumulators.append(opticalxflow_accumulator)
-                
-            opticalyflow_accumulator = OpticalYflowAccumulator(0, 0, 0, 0)
-            self.opticalyflow_accumulators.append(opticalyflow_accumulator)
-
-        # TODO: check what means accumulator connection
-        # Accmulator connection sample
-        # self.saliency_accumulators[0].connect_to(self.saliency_accumulators[1])
 
     def __call__(self, inputs):
         if 'from_lip' not in inputs:
@@ -216,70 +174,59 @@ class FEF(object):
         # task (string)
         phase, task = inputs['from_pfc']
         saliency_map, optical_flow = inputs['from_lip']
+
         # latents.values().shape: (6, 8)
         retina_image, pixel_errors, top_errors, dc_latents = inputs['from_vc']
 
+        # split opticalflow into x axis and y axis and
+        # clip to delete extra region
+        # (128, 128) -> (64, 64)
         opticalxflow = optical_flow[32:97,32:97, 0]
         opticalyflow = optical_flow[32:97,32:97, 1]
 
+        # resize (64, 64) -> (8, 8)
         opticalxflow = cv2.resize(opticalxflow, (8, 8))
         opticalyflow = cv2.resize(opticalyflow, (8, 8))
         
-        # TODO: 領野をまたいだ共通phaseをどう定義するか？
-        # Update accumulator
-        # phase == 0 finding cursor
         if phase == 0:
             for cursor_accumulator in self.cursor_accumulators:
                 cursor_accumulator.process(retina_image)
         else:
             for saliency_accumulator in self.saliency_accumulators:
                 saliency_accumulator.process(saliency_map / 2.0)
+
             for error_accumulator in self.error_accumulators:
                 # accumulate current task error
                 error_accumulator.process(top_errors[task] * 5.0)
-
-            for opticalxflow_accumulator in self.opticalxflow_accumulators:
-                opticalxflow_accumulator.process(opticalxflow)
-                
-            for opticalyflow_accumulator in self.opticalyflow_accumulators:
-                opticalyflow_accumulator.process(opticalyflow)
                 
         # select latents according to tasks
         # to_bg_latent.shape: (1, 8)
         to_bg_latent = dc_latents[task]
                 
         # discount accumulator
-        # TODO: discount after collecting outputs?
         for saliency_accumulator in self.saliency_accumulators:
             saliency_accumulator.post_process()
+
         for cursor_accumulator in self.cursor_accumulators:
             cursor_accumulator.post_process()
-        for opticalxflow_accumulator in self.opticalxflow_accumulators:
-            opticalxflow_accumulator.post_process()
-        for opticalyflow_accumulator in self.opticalyflow_accumulators:
-            opticalyflow_accumulator.post_process()
+
         for error_accumulator in self.error_accumulators:
             error_accumulator.post_process()
 
-        # collect all outputs (nx64, 3) -> (n, 64) -> (n, 8, 8)?
+        # collect all outputs (nx64, 3) -> (n, 64) -> (n, 8, 8)
         output = self._collect_output()
-        reshaped_output = np.array(output).reshape(
-            3, 64, 3)[:, :, 0].reshape(3, 8, 8).tolist()
-        # .transpose((1, 2, 0))
+        reshaped_output = np.array(output).reshape(3, 64, 3)[:, :, 0].reshape(3, 8, 8).tolist()
 
-        # opticalxflow (8, 8, 1), opticalyflow (8, 8, 1)
-        # output.append(opticalxflow)
-        # output.append(opticalyflow)
-        # output is not list
-
-        # TODO: change shape output
-#        output.append(np.expand_dims(opticalxflow.reshape(-1), axis=1))
-#        output.append(np.expand_dims(opticalyflow.reshape(-1), axis=1))
-#        output = np.array(output, dtype=np.float32)
-
-
-        # TODO: pass feature extracted to bg?
+        # NOTE: This is not used
+        opticalflow_output = np.vstack([opticalxflow, opticalyflow])
+        # OR
+        # opticalflow_output = []
+        # opticalflow_output.append(np.expand_dims(opticalxflow.reshape(-1), axis=1))
+        # opticalflow_output.append(np.expand_dims(opticalyflow.reshape(-1), axis=1))
+        # opticalflow_output = np.array(opticalflow_output, dtype=np.float32)
+    
         # NOTE: do not change the output size of to_sc (=action space of BG)
+        # NOTE: if you use opticalflow, add opticalflow_output
         return dict(to_pfc=None,
                     to_bg=(reshaped_output, to_bg_latent),
                     to_sc=output,
@@ -289,14 +236,10 @@ class FEF(object):
         output = []
         for saliency_accumulator in self.saliency_accumulators:
             output.append(saliency_accumulator.output)
+
         for cursor_accumulator in self.cursor_accumulators:
             output.append(cursor_accumulator.output)
-            
-#        for opticalxflow_accumulator in self.opticalxflow_accumulators:
-#            output.append(opticalxflow_accumulator.output)
-#        for opticalyflow_accumulator in self.opticalyflow_accumulators:
-#            output.append(opticalyflow_accumulator.output)
- 
+             
         for error_accumulator in self.error_accumulators:
             output.append(error_accumulator.output)
 
