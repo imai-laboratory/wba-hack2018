@@ -149,8 +149,8 @@ class Inspector(object):
         image = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
         return image
 
-    def show_image(self, data, left, top, label):
-        image = pygame.image.frombuffer(data, (128, 128), 'RGB')
+    def show_image(self, data, left, top, label, color='RGB'):
+        image = pygame.image.frombuffer(data, (128, 128), color)
         self.surface.blit(image, (left, top))
         self.draw_center_text(label, 128 / 2 + left, top + 128 + 8)
         pygame.draw.rect(self.surface, DARK_GRAY, Rect(left, top, 128, 128), 1)
@@ -235,7 +235,9 @@ class Inspector(object):
         bottom = 980
         left = 8 - width
         for i, (key, error) in enumerate(pixel_errors.items()):
-            error = np.array(error) * 255.0
+            error = np.array(error) * 10000.0
+            error = np.reshape(error, list(error.shape) + [1])
+            error = np.tile(error, [1, 1, 3])
             error = np.array(error, dtype=np.uint8)
             error = cv2.resize(error, (128, 128))
             error = np.ascontiguousarray(error, dtype=np.uint8)

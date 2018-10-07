@@ -7,6 +7,9 @@ from .vae import constants
 from collections import OrderedDict
 # from tensorflow import keras as K
 
+def softmax(values):
+    e_x = np.exp(values - np.max(values))
+    return e_x / e_x.sum(axis=0)
 
 model_paths = OrderedDict({
     'PointToTarget': 'vae_models/pointtotarget/model.ckpt',
@@ -105,8 +108,15 @@ class VC(object):
                     size = int(flatten.shape[0] * 0.01)
                     max_indices = np.argpartition(-flatten, size)[:size]
                     top_error = np.zeros(flatten.shape, dtype=np.float32)
-                    top_error[max_indices] = 1.0
-                    top_errors[name] = np.reshape(top_error, pixel_error.shape)
+                    top_error[max_indices] = flatten[max_indices]
+                    top_error = np.reshape(top_error, pixel_error.shape)
+                    # flatten channel
+                    channel_mean_top_error = top_error.mean(-1)
+                    flatten_mean_error = np.reshape(channel_mean_top_error, [-1])
+                    flatten_mean_error[flatten_mean_error > 0] = softmax(
+                        flatten_mean_error[flatten_mean_error > 0])
+                    top_error = np.reshape(flatten_mean_error, pixel_error.shape[:-1])
+                    top_errors[name] = top_error
 
             processed_images = (retina_image, pixel_errors, top_errors)
             self.last_vae_reconstruction = images
