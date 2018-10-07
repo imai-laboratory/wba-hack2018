@@ -3,35 +3,47 @@ import numpy as np
 import cv2
 import math
 from oculoenv.geom import Matrix4
+from collections import deque
 
 class HP(object):
     """ Hippocampal formation module.
 
     Create allocentric panel image.
     """
-    
+
     def __init__(self):
         self.timing = brica.Timing(2, 1, 0)
 
         # Allocantric panel map image
         self.map_image = np.zeros((128, 128, 3), dtype=np.uint8)
-        
+
+        # buffer for latents (7, 6, 8) (buffer_len, tasks, features)
+        self.latents_buffer = dequeue(np.zeros((7, 6, 8)).tolist())
+
     def __call__(self, inputs):
         if 'from_retina' not in inputs:
             raise Exception('HP did not recieve from Environment')
-
+        if 'from_vc' not in inputs:
+            raise Exception('HP did not recieve from VC')
         # This image input from environment is a kind of cheat and not biologically
         # acculate.
         if inputs['from_retina'] is not None:
             image, angle = inputs['from_retina'] # (128, 128, 3), (2)
-
             # Transform input image into allocentric panel image
             transforemed_image = self._extract_transformed_image(image, angle)
-
             # Overlay into existing map image
             self._overlay_extracted_image(self.map_image, transforemed_image)
-        
-        return dict(to_pfc=self.map_image)
+
+        # get latents from visual cortex and append in a buffer (length 7)
+        if inputs['from_vc'] is not None:
+            self.latents_buffer.pop()
+            latents = inputs['from_vc'] # (6, 8)
+
+            # latents_buffer.shape:(7, 6, 8)
+            self.latents_buffer.appendleft(latents)
+            print('latents in HP', latents[0])
+
+        return dict(to_pfc=self.map_image, to_bg=self.latents_buffer)
 
     def _get_perspective_mat(self, fovy, aspect_ratio, znear, zfar):
         ymax = znear * math.tan(fovy * math.pi / 360.0)

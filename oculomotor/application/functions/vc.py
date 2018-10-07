@@ -81,6 +81,7 @@ class VC(object):
 
 
         # feature extraction
+        # TODO: remove skip
         if self.skip:
             processed_images = (retina_image, None)
         else:
@@ -89,10 +90,16 @@ class VC(object):
             reshaped_image = sp.misc.imresize(
                 retina_image, reshape_size, interp='bilinear')
 
-            # VAE reconstruction
+            # VAE reconstruction and get latent parameters
             input_image = np.array(reshaped_image, dtype=np.float32) / 255.0
             with self.sess.as_default():
-                recont_images = self.reconst([input_image])
+                # WARN: using magi no
+                # reconstructed.len: 12
+                reconstructed = self.reconst([input_image])
+
+                # recont_images.shape: (6, 128, 128, 3)
+                # latents.shape: (6, 8)
+                recont_images, latents = reconstructed[:6], reconstruct[6:]
                 images = OrderedDict()
                 pixel_errors = OrderedDict()
                 top_errors = OrderedDict()
@@ -108,24 +115,34 @@ class VC(object):
                     top_error[max_indices] = 1.0
                     top_errors[name] = np.reshape(top_error, pixel_error.shape)
 
-            processed_images = (retina_image, pixel_errors, top_errors)
+            to_fef = (retina_image, pixel_errors, top_errors, latents)
+            to_pfc = (retina_image, pixel_errors, top_errors)
+            to_hp = (latents)
             self.last_vae_reconstruction = images
             self.last_vae_top_errors = top_errors
 
         # Current implementation just passes through input retina image to FEF and PFC.
         # TODO: change pfc fef
-        return dict(to_fef=processed_images,
-                    to_pfc=processed_images)
+        return dict(to_fef=to_fef, to_pfc=to_pfc, to_hp=to_hp)
 
     def build_tf_call(self, tensors):
         def reconstruct(inputs):
             feed_dict = {}
             ops = []
+
+            # tensor.values for each tasks
             for tensor in tensors.values():
                 feed_dict[tensor['input']] = inputs
                 feed_dict[tensor['keep_prob']] = 1.0
                 feed_dict[tensor['deterministic']] = 1.0
                 ops.append(tensor['reconst'])
+
+            # get latent parameters
+            # mu.output.shape (6, 8)
+            for tensor in tensors.values():
+                ops.append(tensor['mu'])
+
+            # ops.len == 12
             sess = tf.get_default_session()
             return sess.run(ops, feed_dict)
 
