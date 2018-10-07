@@ -176,6 +176,7 @@ class Inspector(object):
                               bottom + 8)
 
     def show_fef_data_bars(self, fef_data):
+        fef_data = list(fef_data[:64]) + list(fef_data[128:])
         fef_data_len = len(fef_data)
 
         bottom = 256 + 16
@@ -193,22 +194,26 @@ class Inspector(object):
                               bottom + 8)
 
     def show_fef_data_grid(self, fef_data):
-        grid_division = int(math.sqrt(len(fef_data) // 2))
+        grid_division = 8
         grid_width = 128 // grid_division
 
         likelihoods0 = []
         likelihoods1 = []
+        likelihoods2 = []
 
-        data_len = len(fef_data) // 2
+        data_len = len(fef_data) // 3
 
         for i in range(data_len):
             likelihoods0.append(fef_data[i][0])
             likelihoods1.append(fef_data[i + data_len][0])
+            likelihoods2.append(fef_data[i + data_len*2][0])
 
         self.show_grid(likelihoods0, 0, grid_division, grid_width, 8, 300,
                        "saliency acc")
         self.show_grid(likelihoods1, 0, grid_division, grid_width, 8 + 128,
                        300, "cursor acc")
+        self.show_grid(likelihoods2, 0, grid_division, grid_width, 8 + 128*2,
+                       300, "error acc")
 
     def show_vae_reconstruction_grid(self, vae_data):
         data_len = len(vae_data)
@@ -235,8 +240,7 @@ class Inspector(object):
         bottom = 980
         left = 8 - width
         for i, (key, error) in enumerate(pixel_errors.items()):
-            error = np.array(error) * 10000.0
-            error = np.reshape(error, list(error.shape) + [1])
+            error = np.reshape(error, list(error.shape) + [1]) * 255.0
             error = np.tile(error, [1, 1, 3])
             error = np.array(error, dtype=np.uint8)
             error = cv2.resize(error, (128, 128))

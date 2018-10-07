@@ -95,13 +95,13 @@ class CursorAccumulator(ActionAccumulator):
         # Crop region image (to the region)
         region_image = retina_image[self.pixel_y:self.pixel_y+GRID_WIDTH,
                                     self.pixel_x:self.pixel_x+GRID_WIDTH, :]
-        
+
         red_min = np.array([150, 0, 0], np.uint8)
         red_max = np.array([255, 100, 100], np.uint8)
         region_image_red = cv2.inRange(region_image, red_min, red_max)
         match = np.mean(region_image_red)
 
-        '''        
+        '''
         region_image = np.array(region_image)
         region_image = region_image.reshape((-1, 3))
         region_image = np.mean(region_image, axis=0)
@@ -135,6 +135,7 @@ class FEF(object):
     def __init__(self):
         self.timing = brica.Timing(4, 1, 0)
         self.saliency_accumulators = []
+        self.error_accumulators = []
         self.cursor_accumulators = []
         cursor_template = load_image("data/debug_cursor_template_w.png")
 
@@ -152,6 +153,10 @@ class FEF(object):
                 # accumulators shape (GRID_DIVISION**2, ) * 2
                 saliency_accumulator = SaliencyAccumulator(pixel_x, pixel_y, ex, ey)
                 self.saliency_accumulators.append(saliency_accumulator)
+
+                # vae error accumulator
+                error_accumulator = SaliencyAccumulator(pixel_x, pixel_y, ex, ey)
+                self.error_accumulators.append(error_accumulator)
 
                 # TODO: want to remove this!
                 cursor_accumulator = CursorAccumulator(pixel_x, pixel_y, ex, ey,
@@ -172,9 +177,11 @@ class FEF(object):
         if 'from_bg' not in inputs:
             raise Exception('FEF did not recieve from BG')
 
-        phase = inputs['from_pfc']
+        # task (string)
+        phase, task = inputs['from_pfc']
         saliency_map, optical_flow = inputs['from_lip']
-        retina_image, pixel_errors, top_errors = inputs['from_vc']
+        # latents.values().shape: (6, 8)
+        retina_image, pixel_errors, top_errors, dc_latents = inputs['from_vc']
 
         # TODO: 領野をまたいだ共通phaseをどう定義するか？
         # Update accumulator
@@ -185,6 +192,13 @@ class FEF(object):
         else:
             for saliency_accumulator in self.saliency_accumulators:
                 saliency_accumulator.process(saliency_map)
+            for error_accumulator in self.error_accumulators:
+                # accumulate current task error
+                error_accumulator.process(top_errors[task] * 10.0)
+
+        # select latents according to tasks
+        # to_bg_latent.shape: (1, 8)
+        to_bg_latent = dc_latents[task]
 
         # discount accumulator
         # TODO: discount after collecting outputs?
@@ -192,14 +206,16 @@ class FEF(object):
             saliency_accumulator.post_process()
         for cursor_accumulator in self.cursor_accumulators:
             cursor_accumulator.post_process()
+        for error_accumulator in self.error_accumulators:
+            error_accumulator.post_process()
 
-        # collect all outputs
+        # collect all outputs (nx64, 3) -> (n, 64, 3) -> (n, 8, 8, 3)?
         output = self._collect_output()
 
         # TODO: pass feature extracted to bg?
         # NOTE: do not change the output size of to_sc (=action space of BG)
         return dict(to_pfc=None,
-                    to_bg=output,
+                    to_bg=(output, to_bg_latent),
                     to_sc=output,
                     to_cb=None)
 
@@ -209,4 +225,6 @@ class FEF(object):
             output.append(saliency_accumulator.output)
         for cursor_accumulator in self.cursor_accumulators:
             output.append(cursor_accumulator.output)
+        for error_accumulator in self.error_accumulators:
+            output.append(error_accumulator.output)
         return np.array(output, dtype=np.float32)
