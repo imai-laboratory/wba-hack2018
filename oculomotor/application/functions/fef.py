@@ -316,7 +316,7 @@ class FEF(object):
         for background_accumulator in self.background_accumulators:
             background_output.append(background_accumulator.output[0])
         background_output = np.array(background_output)
-        if np.mean(background_output) > 0.3:
+        if np.mean(background_output) > 0.5:
             background_output = np.zeros(background_output.shape)
         output[64:128][:,0] += background_output
         #output[64:128][:,0] = np.abs(output[64:128][:,0])

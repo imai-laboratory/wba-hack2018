@@ -152,9 +152,9 @@ class EvaluationTask(object):
             # Choose action by the agent's decision
             action = agent(image, angle, reward, done)
             task = agent.environment.current_task
-            if task is not None and task[0] != 'fixation':
+            if task is not None and task != 'fixation':
                 switch_count += 1
-                if task[0] == task_names[self.content_id-1]:
+                if task == task_names[self.content_id-1]:
                     switch_correct += 1
             # Foward environment one step
             obs, reward, done, info = env.step(action)
