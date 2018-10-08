@@ -100,18 +100,18 @@ class PFC(object):
 
         # 8.5 is hyperparameter of threshold
         if self.phase == Phase.INIT:
-            if self.vae_cursor_accumulator.output() < 8.5:
+            if self.vae_cursor_accumulator.output() < 9.0:
                 self.phase = Phase.START
                 bg_message = 1
                 bg_findcursor = 1
         elif self.phase == Phase.START:
-            if self.vae_cursor_accumulator.output() > 8.5:
+            if self.vae_cursor_accumulator.output() > 9.0:
                 self.phase = Phase.TARGET
                 bg_message = 1
             else:
                 bg_findcursor = 1
         else:
-            if self.vae_cursor_accumulator.output() < 8.5:
+            if self.vae_cursor_accumulator.output() < 9.0:
                 self.phase = Phase.START
 
         if self.phase == Phase.INIT or self.phase == Phase.START:
