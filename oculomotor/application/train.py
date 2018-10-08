@@ -105,8 +105,8 @@ def train(content, step_size, logger, model_name, use_ppo_models):
             logger.log("episode_reward", episode_reward, episode_count)
             episode_reward = 0
             # Plase add model save code as you like.
-            if i % 100000 == 0:
-                bg.save_model()
+          if i % 5000 == 0:
+              bg.save_model()
     print("training finished")
     logger.close()
 
