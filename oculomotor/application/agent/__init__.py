@@ -12,6 +12,7 @@ class Environment:
         self._reward = 0.0
         self._done = False
         self._action = None
+        self.current_task = None
         self.timing = brica.Timing(0, 1, 0)
 
     def __call__(self, inputs):
@@ -20,6 +21,8 @@ class Environment:
 
         # Action from Cerebellum module
         cb_action = inputs['from_cb']
+
+        self.current_task = inputs['from_pfc']
         
         if sc_action is not None:
             # If there is an action from SC module (supposed to be a succade eye motion),
@@ -61,6 +64,7 @@ class Agent(object):
         ('vc', 'fef'),
         ('pfc', 'fef'), # offset=3
         ('pfc', 'bg'),
+        ('pfc', 'environment'),
         ('fef', 'pfc'), # offset=4
         ('fef', 'sc'),
         ('fef', 'bg'),

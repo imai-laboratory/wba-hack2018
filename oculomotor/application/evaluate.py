@@ -29,6 +29,14 @@ TASK4_DURATION = 60*30
 TASK5_DURATION = 60*40
 TASK6_DURATION = 60*30
 
+task_names = [
+    'PointToTarget',
+    'ChangeDetection',
+    'OddOneOut',
+    'VisualSearch',
+    'MultipleObject',
+    'RandomDot',
+]
 
 content_class_names = [
     "PointToTargetContent",
@@ -137,10 +145,17 @@ class EvaluationTask(object):
 
         results = []
 
+        switch_count = 0
+        switch_correct = 0
         for i in range(self.duration):
             image, angle = obs['screen'], obs['angle']
             # Choose action by the agent's decision
             action = agent(image, angle, reward, done)
+            task = agent.environment.current_task
+            if task is not None and task[0] != 'fixation':
+                switch_count += 1
+                if task[0] == task_names[self.content_id-1]:
+                    switch_correct += 1
             # Foward environment one step
             obs, reward, done, info = env.step(action)
 
@@ -158,6 +173,7 @@ class EvaluationTask(object):
         print("content:{} difficulty:{} end, reward={}".format(self.content_id,
                                                                self.difficulty,
                                                                task_reward))
+        print('switch acc: {}'.format(float(switch_correct) / switch_count))
         return results, task_reward
 
 

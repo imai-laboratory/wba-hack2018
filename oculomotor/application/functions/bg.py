@@ -55,6 +55,7 @@ class BG(object):
             self.agents = OrderedDict()
             savers = OrderedDict()
             for name, path in PPO_MODEL_PATHS.items():
+                name = 'ppo' + name
                 agent = Agent(
                     model,
                     NUM_ACTIONS,
@@ -113,8 +114,8 @@ class BG(object):
             print('load ppo models')
             # load all saved models
             for name, saver in savers.items():
-                if PPO_MODEL_PATHS[name] is not None:
-                    saver.restore(self.sess, PPO_MODEL_PATHS[name])
+                if PPO_MODEL_PATHS[name[3:]] is not None:
+                    saver.restore(self.sess, PPO_MODEL_PATHS[name[3:]])
         else:
             self.saver = tf.train.Saver()
             if self.model_name:
@@ -182,7 +183,7 @@ class BG(object):
 
                 if self.use_saved_models:
                     # use models trained on current task
-                    agent = self.agents[current_task]
+                    agent = self.agents['ppo'+current_task]
                     action = agent.act(ppo_input, [reward], [done])[0]
                 else:
                     action = self.agent.act(ppo_input, [reward], [done])[0]

@@ -119,5 +119,8 @@ class PFC(object):
         else:
             fef_message = 1
 
+        env_task = current_task if self.phase == Phase.TARGET else 'fixation'
+
         return dict(to_fef=(fef_message, current_task),
-                    to_bg=(bg_message, current_task))
+                    to_bg=(bg_message, current_task),
+                    to_environment=(env_task))
